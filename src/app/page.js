@@ -5,12 +5,12 @@ import Loader from "@/components/Loader";
 import Navbar from "@/components/Navbar";
 
 const featuredItems = [
-  { id: "cam-1", title: "Sony A7 IV Camera", location: "Kolkata", price: 82, category: "Cameras" },
-  { id: "game-2", title: "PS5 Console Bundle", location: "Bangalore", price: 37, category: "Gaming" },
-  { id: "audio-3", title: "Studio Mic Kit", location: "Mumbai", price: 24, category: "Audio" },
-  { id: "tool-4", title: "Makita Drill Set", location: "Delhi", price: 19, category: "Tools" },
-  { id: "drone-5", title: "DJI Mini Drone", location: "Pune", price: 41, category: "Drones" },
-  { id: "camp-6", title: "3-Person Tent Pro", location: "Goa", price: 28, category: "Camping" },
+  { _id: "cam-1", title: "Sony A7 IV Camera", itemType: "camera", category: "cameras", pricePerDay: 82, pricePerHour: 22, depositAmount: 500, location: { address: "Park Street", city: "Kolkata" }, availability: { isAvailable: true }, rating: 4.9, totalReviews: 42 },
+  { _id: "game-2", title: "PS5 Console Bundle", itemType: "gaming", category: "gaming", pricePerDay: 37, pricePerHour: 10, depositAmount: 300, location: { address: "Indiranagar", city: "Bangalore" }, availability: { isAvailable: true }, rating: 4.8, totalReviews: 31 },
+  { _id: "audio-3", title: "Studio Mic Kit", itemType: "audio", category: "audio", pricePerDay: 24, pricePerHour: 7, depositAmount: 200, location: { address: "Andheri", city: "Mumbai" }, availability: { isAvailable: false }, rating: 4.7, totalReviews: 18 },
+  { _id: "tool-4", title: "Makita Drill Set", itemType: "tool", category: "power-tools", pricePerDay: 19, pricePerHour: 5, depositAmount: 500, location: { address: "Karawal Nagar", city: "Delhi" }, availability: { isAvailable: true }, rating: 4.6, totalReviews: 10 },
+  { _id: "drone-5", title: "DJI Mini Drone", itemType: "drone", category: "drones", pricePerDay: 41, pricePerHour: 12, depositAmount: 750, location: { address: "Baner", city: "Pune" }, availability: { isAvailable: true }, rating: 4.9, totalReviews: 22 },
+  { _id: "camp-6", title: "3-Person Tent Pro", itemType: "camping", category: "camping", pricePerDay: 28, pricePerHour: 8, depositAmount: 250, location: { address: "Calangute", city: "Goa" }, availability: { isAvailable: true }, rating: 4.5, totalReviews: 14 },
 ];
 
 export default function Home() {

@@ -8,7 +8,7 @@ const menuItems = [
     { label: "Browse Items", href: "/items", icon: "grid" },
     { label: "My Items", href: "/dashboard", icon: "box" },
     { label: "Bookings", href: "/dashboard", icon: "calendar" },
-    { label: "Profile", href: "/dashboard", icon: "user" },
+    { label: "Profile", href: "/profile", icon: "user" },
 ];
 
 function Icon({ type }) {
@@ -65,7 +65,7 @@ export default function Sidebar({ active = "Home" }) {
 
     return (
         <aside
-            className={`sticky top-24 h-fit rounded-2xl border border-gray-200 bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-800 ${collapsed ? "w-21" : "w-full max-w-65"
+            className={`vyntra-scroll h-fit rounded-2xl border border-gray-200 bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-800 lg:h-full lg:overflow-y-auto ${collapsed ? "w-21" : "w-full max-w-65"
                 }`}
         >
             <button
@@ -84,8 +84,8 @@ export default function Sidebar({ active = "Home" }) {
                             key={item.label}
                             href={item.href}
                             className={`group flex items-center rounded-2xl px-3 py-2.5 text-sm font-medium ${isActive
-                                    ? "bg-blue-600 text-white shadow-sm"
-                                    : "text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+                                ? "bg-blue-600 text-white shadow-sm"
+                                : "text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
                                 }`}
                         >
                             <span className="mr-3 inline-flex items-center justify-center">

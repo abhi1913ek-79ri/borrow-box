@@ -11,7 +11,7 @@ export default function FeaturedItemsGrid({ items }) {
             {items.length ? (
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {items.map((item) => (
-                        <ItemCard key={item.id} item={item} />
+                        <ItemCard key={item._id || item.id || item.title} item={item} />
                     ))}
                 </div>
             ) : (

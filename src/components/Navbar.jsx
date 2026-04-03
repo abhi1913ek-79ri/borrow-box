@@ -3,8 +3,18 @@
 import Link from "next/link";
 import Button from "./Button";
 import ThemeToggle from "./ThemeToggle";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function Navbar({ isLoggedIn = false }) {
+    const router = useRouter();
+    const [query, setQuery] = useState("");
+
+    const handleSearch = (event) => {
+        event.preventDefault();
+        router.push(`/items?search=${encodeURIComponent(query)}`);
+    };
+
     return (
         <header className="sticky top-0 z-40 border-b border-gray-200/70 bg-white/90 backdrop-blur-xl dark:border-gray-800 dark:bg-gray-900/90">
             <nav className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:gap-4 sm:px-6 lg:px-8">
@@ -18,22 +28,29 @@ export default function Navbar({ isLoggedIn = false }) {
                     </div>
                 </Link>
 
-                <div className="hidden flex-1 justify-center md:flex">
+                <form onSubmit={handleSearch} className="hidden flex-1 justify-center md:flex">
                     <div className="flex w-full max-w-xl items-center rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2 shadow-sm dark:border-gray-700 dark:bg-gray-800">
                         <input
                             type="text"
+                            value={query}
+                            onChange={(event) => setQuery(event.target.value)}
                             placeholder="Search cameras, bikes, consoles..."
                             className="w-full bg-transparent text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none dark:text-gray-100"
                         />
+                        <button type="submit" className="ml-2 rounded-xl bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-blue-700">
+                            Search
+                        </button>
                     </div>
-                </div>
+                </form>
 
                 <div className="ml-auto flex items-center gap-2 sm:gap-3">
                     <ThemeToggle />
                     {isLoggedIn ? (
-                        <Button variant="secondary" className="px-3 sm:px-4">
-                            Profile
-                        </Button>
+                        <Link href="/profile">
+                            <Button variant="secondary" className="px-3 sm:px-4">
+                                Profile
+                            </Button>
+                        </Link>
                     ) : (
                         <Link href="/login">
                             <Button className="px-3 sm:px-4">Login</Button>
@@ -43,13 +60,18 @@ export default function Navbar({ isLoggedIn = false }) {
             </nav>
 
             <div className="mx-auto px-4 pb-3 md:hidden sm:px-6 lg:px-8">
-                <div className="flex items-center rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2 dark:border-gray-700 dark:bg-gray-800">
+                <form onSubmit={handleSearch} className="flex items-center rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2 dark:border-gray-700 dark:bg-gray-800">
                     <input
                         type="text"
+                        value={query}
+                        onChange={(event) => setQuery(event.target.value)}
                         placeholder="Search items"
                         className="w-full bg-transparent text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none dark:text-gray-100"
                     />
-                </div>
+                    <button type="submit" className="ml-2 rounded-xl bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700">
+                        Go
+                    </button>
+                </form>
             </div>
         </header>
     );

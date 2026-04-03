@@ -1,6 +1,19 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Button from "./Button";
 
 export default function HeroSection() {
+    const [search, setSearch] = useState("");
+    const router = useRouter();
+
+    const handleSearch = (event) => {
+        event.preventDefault();
+        const query = search.trim();
+        router.push(query ? `/items?search=${encodeURIComponent(query)}` : "/items");
+    };
+
     return (
         <section className="relative overflow-hidden rounded-3xl bg-linear-to-br from-blue-700 via-blue-600 to-cyan-500 p-6 text-white shadow-xl sm:p-10">
             <div className="pointer-events-none absolute -right-16 -top-16 h-52 w-52 rounded-full bg-white/15 blur-2xl" />
@@ -15,14 +28,20 @@ export default function HeroSection() {
                     A premium peer-to-peer rental platform for gadgets, gear, and lifestyle essentials with frictionless bookings.
                 </p>
 
-                <div className="mx-auto mt-7 flex max-w-2xl flex-col items-stretch gap-3 rounded-2xl bg-white/90 p-3 shadow-xl backdrop-blur sm:flex-row">
+                <form
+                    onSubmit={handleSearch}
+                    className="mx-auto mt-7 flex max-w-2xl flex-col items-stretch gap-3 rounded-2xl bg-white/90 p-3 shadow-xl backdrop-blur sm:flex-row"
+                >
                     <input
                         type="text"
+                        value={search}
+                        onChange={(event) => setSearch(event.target.value)}
                         placeholder="Search by item, category, or location"
                         className="h-12 flex-1 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
                     />
-                    <Button className="h-12 px-6">Search Rentals</Button>
-                </div>
+                    <Button type="submit" className="h-12 px-6">Search Rentals</Button>
+                    <Button type="button" variant="secondary" className="h-12 px-6" onClick={() => router.push("/items")}>Browse Items</Button>
+                </form>
             </div>
         </section>
     );

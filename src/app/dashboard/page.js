@@ -13,10 +13,10 @@ export default function DashboardPage() {
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
             <Navbar isLoggedIn />
 
-            <main className="mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[auto_1fr] lg:px-8">
+            <main className="mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:h-[calc(100vh-92px)] lg:grid-cols-[auto_1fr] lg:overflow-hidden lg:px-8">
                 <Sidebar active="Home" />
 
-                <div className="space-y-6">
+                <div className="vyntra-scroll min-h-0 space-y-6 lg:h-full lg:overflow-y-auto lg:pr-2">
                     <section className="grid gap-4 sm:grid-cols-3">
                         {stats.map((stat) => (
                             <article
