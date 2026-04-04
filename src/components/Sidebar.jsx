@@ -65,7 +65,7 @@ export default function Sidebar({ active = "Home" }) {
 
     return (
         <aside
-            className={`vyntra-scroll h-fit rounded-2xl border border-gray-200 bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-800 lg:h-full lg:overflow-y-auto ${collapsed ? "w-21" : "w-full max-w-65"
+            className={`vyntra-scroll hidden h-fit rounded-2xl border border-gray-200 bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-800 md:block md:h-full md:overflow-y-auto ${collapsed ? "w-21" : "w-full max-w-65"
                 }`}
         >
             <button
@@ -92,6 +92,36 @@ export default function Sidebar({ active = "Home" }) {
                                 <Icon type={item.icon} />
                             </span>
                             {!collapsed && <span>{item.label}</span>}
+                        </Link>
+                    );
+                })}
+            </div>
+        </aside>
+    );
+}
+export function SidebarMenu({ active = "Home", onNavigate }) {
+    return (
+        <aside
+            className="rounded-2xl border border-gray-200 bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-800"
+        >
+            <div className="space-y-1">
+                {menuItems.map((item) => {
+                    const isActive = item.label === active;
+
+                    return (
+                        <Link
+                            key={item.label}
+                            href={item.href}
+                            onClick={onNavigate}
+                            className={`group flex items-center rounded-2xl px-3 py-2.5 text-sm font-medium ${isActive
+                                ? "bg-blue-600 text-white shadow-sm"
+                                : "text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+                                }`}
+                        >
+                            <span className="mr-3 inline-flex items-center justify-center">
+                                <Icon type={item.icon} />
+                            </span>
+                            <span>{item.label}</span>
                         </Link>
                     );
                 })}

@@ -2,12 +2,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import Button from "@/components/Button";
 import ItemCard from "@/components/ItemCard";
 import Navbar from "@/components/Navbar";
-import OpenStreetMapLocationPicker from "@/components/OpenStreetMapLocationPicker";
 import { filterMarketplaceItems, getMarketplaceItems, itemCatalogConfig } from "@/services/itemService";
+
+const OpenStreetMapLocationPicker = dynamic(() => import("@/components/OpenStreetMapLocationPicker"), {
+    ssr: false,
+});
 
 const categoryLabels = {
     all: "All",
@@ -39,6 +43,7 @@ export default function ItemsPage() {
     const [liveLocationStatus, setLiveLocationStatus] = useState("idle");
     const [locationPermissionMessage, setLocationPermissionMessage] = useState("");
     const [onlyAvailable, setOnlyAvailable] = useState(false);
+    const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
     const [items, setItems] = useState([]);
     const [isLoadingItems, setIsLoadingItems] = useState(true);
     const [loadError, setLoadError] = useState("");
@@ -96,7 +101,7 @@ export default function ItemsPage() {
 
         setSearch(nextSearch);
         setSelectedCategory(categories.includes(nextCategory) ? nextCategory : "all");
-    }, [searchParams]);
+    }, [categories, searchParams]);
 
     const filteredItems = useMemo(() => {
         return filterMarketplaceItems(items, {
@@ -110,12 +115,139 @@ export default function ItemsPage() {
         });
     }, [city, items, latitude, longitude, maxPrice, nearbyRadiusKm, onlyAvailable, search, selectedCategory]);
 
+    const filtersContent = ({ showSearch = true } = {}) => (
+        <div className="space-y-4">
+            {showSearch && (
+                <div>
+                    <p className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Search</p>
+                    <input
+                        value={search}
+                        onChange={(event) => setSearch(event.target.value)}
+                        type="text"
+                        placeholder="Search product, city, address..."
+                        className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                    />
+                    {(search || selectedCategory !== "all") && (
+                        <p className="mt-2 text-xs text-blue-600 dark:text-blue-300">
+                            Active from navigation: {search ? `search="${search}"` : ""} {selectedCategory !== "all" ? `category=${categoryLabels[selectedCategory]}` : ""}
+                        </p>
+                    )}
+                </div>
+            )}
+
+            <div>
+                <p className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Category</p>
+                <div className="grid grid-cols-2 gap-2">
+                    {categories.map((category) => {
+                        const isActive = selectedCategory === category;
+                        return (
+                            <button
+                                key={category}
+                                type="button"
+                                onClick={() => setSelectedCategory(category)}
+                                className={`rounded-xl px-3 py-2 text-left text-sm font-medium transition ${isActive
+                                    ? "bg-blue-600 text-white"
+                                    : "bg-gray-50 text-gray-700 hover:bg-gray-100 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-700"
+                                    }`}
+                            >
+                                {categoryLabels[category] || category}
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+
+            <div>
+                <p className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Price Slider</p>
+                <input
+                    type="range"
+                    min={itemCatalogConfig.priceRange.min}
+                    max={itemCatalogConfig.priceRange.max}
+                    value={maxPrice}
+                    onChange={(event) => setMaxPrice(Number(event.target.value))}
+                    className="w-full accent-blue-600"
+                />
+                <div className="mt-2 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                    <span>${itemCatalogConfig.priceRange.min}</span>
+                    <span>Up to ${maxPrice}/day</span>
+                    <span>${itemCatalogConfig.priceRange.max}</span>
+                </div>
+            </div>
+
+            <div>
+                <p className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">City Filter</p>
+                <select
+                    value={city}
+                    onChange={(event) => setCity(event.target.value)}
+                    className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                >
+                    <option value="all">All Cities</option>
+                    {itemCatalogConfig.cityList.map((cityName) => (
+                        <option key={cityName} value={cityName}>
+                            {cityName}
+                        </option>
+                    ))}
+                </select>
+            </div>
+
+            <div>
+                <OpenStreetMapLocationPicker
+                    latitude={latitude}
+                    longitude={longitude}
+                    onChange={(nextLat, nextLng) => {
+                        setLatitude(nextLat);
+                        setLongitude(nextLng);
+                    }}
+                    onUseLiveLocation={requestLiveLocation}
+                    liveLocationStatus={liveLocationStatus}
+                />
+                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                    Live location is used as the nearby filter center. Click the map to move the location pin.
+                </p>
+            </div>
+
+            <div>
+                <p className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Nearby Radius</p>
+                <input
+                    type="range"
+                    min="5"
+                    max="100"
+                    step="5"
+                    value={nearbyRadiusKm}
+                    onChange={(event) => setNearbyRadiusKm(Number(event.target.value))}
+                    className="w-full accent-blue-600"
+                />
+                <div className="mt-2 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                    <span>5 km</span>
+                    <span>Within {nearbyRadiusKm} km</span>
+                    <span>100 km</span>
+                </div>
+            </div>
+
+            <label className="flex items-center gap-3 rounded-2xl bg-gray-50 px-3 py-2 text-sm text-gray-700 dark:bg-gray-900 dark:text-gray-200">
+                <input
+                    type="checkbox"
+                    checked={onlyAvailable}
+                    onChange={(event) => setOnlyAvailable(event.target.checked)}
+                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                Show only available items
+            </label>
+
+            <Link href="/dashboard">
+                <Button variant="secondary" className="w-full">
+                    Open Dashboard Filters
+                </Button>
+            </Link>
+        </div>
+    );
+
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
             <Navbar isLoggedIn />
 
-            <main className="mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:h-[calc(100vh-92px)] lg:grid-cols-[320px_1fr] lg:overflow-hidden lg:px-8">
-                <aside className="vyntra-scroll h-fit space-y-5 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800 lg:h-full lg:overflow-y-auto lg:pr-2">
+            <main className="mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 sm:px-6 md:h-[calc(100vh-92px)] md:grid-cols-[320px_1fr] md:overflow-hidden lg:px-8">
+                <aside className="vyntra-scroll hidden h-fit space-y-5 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800 md:block md:h-full md:overflow-y-auto md:pr-2">
                     <div className="space-y-3">
                         <div>
                             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">Marketplace Filters</p>
@@ -137,7 +269,11 @@ export default function ItemsPage() {
                         </Button>
                     </div>
 
-                    <div className="space-y-4">
+                    {filtersContent()}
+                </aside>
+
+                <section className="vyntra-scroll min-h-0 space-y-5 md:h-full md:overflow-y-auto md:pr-2">
+                    <div className="space-y-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800 md:hidden">
                         <div>
                             <p className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Search</p>
                             <input
@@ -154,114 +290,37 @@ export default function ItemsPage() {
                             )}
                         </div>
 
-                        <div>
-                            <p className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Category</p>
-                            <div className="grid grid-cols-2 gap-2">
-                                {categories.map((category) => {
-                                    const isActive = selectedCategory === category;
-                                    return (
-                                        <button
-                                            key={category}
-                                            type="button"
-                                            onClick={() => setSelectedCategory(category)}
-                                            className={`rounded-xl px-3 py-2 text-left text-sm font-medium transition ${isActive
-                                                ? "bg-blue-600 text-white"
-                                                : "bg-gray-50 text-gray-700 hover:bg-gray-100 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-700"
-                                                }`}
-                                        >
-                                            {categoryLabels[category] || category}
-                                        </button>
-                                    );
-                                })}
+                        <button
+                            type="button"
+                            onClick={() => setIsMobileFilterOpen((prev) => !prev)}
+                            className="flex h-11 w-full items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-700"
+                        >
+                            <span className="inline-flex items-center gap-2">
+                                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M3 6h18M3 12h18M3 18h18" />
+                                </svg>
+                                Filter Menu
+                            </span>
+                            <span className="text-xs">{isMobileFilterOpen ? "Close" : "Open"}</span>
+                        </button>
+
+                        {isMobileFilterOpen && (
+                            <div className="space-y-4 rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-900">
+                                <div className="rounded-2xl border border-blue-200 bg-blue-50/80 p-3 text-sm text-blue-700 dark:border-blue-900/40 dark:bg-blue-900/20 dark:text-blue-300">
+                                    <p className="font-medium">Live location status</p>
+                                    <p className="mt-1 text-xs">
+                                        {locationPermissionMessage || "We request your live location when you open the browse page."}
+                                    </p>
+                                    <Button variant="secondary" className="mt-3 w-full" onClick={requestLiveLocation}>
+                                        {liveLocationStatus === "requesting" ? "Requesting..." : "Use my live location"}
+                                    </Button>
+                                </div>
+
+                                {filtersContent({ showSearch: false })}
                             </div>
-                        </div>
-
-                        <div>
-                            <p className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Price Slider</p>
-                            <input
-                                type="range"
-                                min={itemCatalogConfig.priceRange.min}
-                                max={itemCatalogConfig.priceRange.max}
-                                value={maxPrice}
-                                onChange={(event) => setMaxPrice(Number(event.target.value))}
-                                className="w-full accent-blue-600"
-                            />
-                            <div className="mt-2 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                                <span>${itemCatalogConfig.priceRange.min}</span>
-                                <span>Up to ${maxPrice}/day</span>
-                                <span>${itemCatalogConfig.priceRange.max}</span>
-                            </div>
-                        </div>
-
-                        <div>
-                            <p className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">City Filter</p>
-                            <select
-                                value={city}
-                                onChange={(event) => setCity(event.target.value)}
-                                className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                            >
-                                <option value="all">All Cities</option>
-                                {itemCatalogConfig.cityList.map((cityName) => (
-                                    <option key={cityName} value={cityName}>
-                                        {cityName}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div>
-                            <OpenStreetMapLocationPicker
-                                latitude={latitude}
-                                longitude={longitude}
-                                onChange={(nextLat, nextLng) => {
-                                    setLatitude(nextLat);
-                                    setLongitude(nextLng);
-                                }}
-                                onUseLiveLocation={requestLiveLocation}
-                                liveLocationStatus={liveLocationStatus}
-                            />
-                            <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                                Live location is used as the nearby filter center. Click the map to move the location pin.
-                            </p>
-                        </div>
-
-                        <div>
-                            <p className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Nearby Radius</p>
-                            <input
-                                type="range"
-                                min="5"
-                                max="100"
-                                step="5"
-                                value={nearbyRadiusKm}
-                                onChange={(event) => setNearbyRadiusKm(Number(event.target.value))}
-                                className="w-full accent-blue-600"
-                            />
-                            <div className="mt-2 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                                <span>5 km</span>
-                                <span>Within {nearbyRadiusKm} km</span>
-                                <span>100 km</span>
-                            </div>
-                        </div>
-
-                        <label className="flex items-center gap-3 rounded-2xl bg-gray-50 px-3 py-2 text-sm text-gray-700 dark:bg-gray-900 dark:text-gray-200">
-                            <input
-                                type="checkbox"
-                                checked={onlyAvailable}
-                                onChange={(event) => setOnlyAvailable(event.target.checked)}
-                                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                            />
-                            Show only available items
-                        </label>
-
-                        <Link href="/dashboard">
-                            <Button variant="secondary" className="w-full">
-                                Open Dashboard Filters
-                            </Button>
-                        </Link>
+                        )}
                     </div>
-                </aside>
 
-                <section className="vyntra-scroll min-h-0 space-y-5 lg:h-full lg:overflow-y-auto lg:pr-2">
                     <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
                         <div>
                             <p className="text-sm text-gray-500 dark:text-gray-400">Search results</p>

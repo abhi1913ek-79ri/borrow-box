@@ -5,10 +5,13 @@ import Button from "./Button";
 import ThemeToggle from "./ThemeToggle";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { SidebarMenu } from "./Sidebar";
 
-export default function Navbar({ isLoggedIn = false }) {
+export default function Navbar({ isLoggedIn = false, mobileSidebarActive = "" }) {
     const router = useRouter();
     const [query, setQuery] = useState("");
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const addItemHref = isLoggedIn ? "/dashboard" : "/add-item";
 
     const handleSearch = (event) => {
         event.preventDefault();
@@ -45,12 +48,32 @@ export default function Navbar({ isLoggedIn = false }) {
 
                 <div className="ml-auto flex items-center gap-2 sm:gap-3">
                     <ThemeToggle />
+                    <Link href={addItemHref} className="hidden md:block">
+                        <Button className="bg-linear-to-r from-blue-600 via-blue-500 to-cyan-500 px-3 shadow-md shadow-blue-600/30 hover:from-blue-500 hover:via-blue-500 hover:to-cyan-400 sm:px-4">
+                            Add New Item
+                        </Button>
+                    </Link>
                     {isLoggedIn ? (
-                        <Link href="/profile">
-                            <Button variant="secondary" className="px-3 sm:px-4">
-                                Profile
-                            </Button>
-                        </Link>
+                        <>
+                            {mobileSidebarActive ? (
+                                <button
+                                    type="button"
+                                    onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+                                    className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-gray-50 text-gray-700 md:hidden dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                                    aria-label="Open menu"
+                                >
+                                    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M3 6h18M3 12h18M3 18h18" />
+                                    </svg>
+                                </button>
+                            ) : null}
+
+                            <Link href="/profile" className={mobileSidebarActive ? "hidden md:block" : "block"}>
+                                <Button variant="secondary" className="px-3 sm:px-4">
+                                    Profile
+                                </Button>
+                            </Link>
+                        </>
                     ) : (
                         <Link href="/login">
                             <Button className="px-3 sm:px-4">Login</Button>
@@ -72,6 +95,15 @@ export default function Navbar({ isLoggedIn = false }) {
                         Go
                     </button>
                 </form>
+
+                {isLoggedIn && mobileSidebarActive && isMobileMenuOpen && (
+                    <div className="mt-3">
+                        <SidebarMenu
+                            active={mobileSidebarActive}
+                            onNavigate={() => setIsMobileMenuOpen(false)}
+                        />
+                    </div>
+                )}
             </div>
         </header>
     );

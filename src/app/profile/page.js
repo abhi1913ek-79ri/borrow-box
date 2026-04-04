@@ -118,8 +118,8 @@ export default function ProfilePage() {
     if (isLoadingProfile) {
         return (
             <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-                <Navbar isLoggedIn />
-                <main className="mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:h-[calc(100vh-92px)] lg:grid-cols-[auto_1fr] lg:overflow-hidden lg:px-8">
+                <Navbar isLoggedIn mobileSidebarActive="Profile" />
+                <main className="mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 sm:px-6 md:h-[calc(100vh-92px)] md:grid-cols-[auto_1fr] md:overflow-hidden lg:px-8">
                     <Sidebar active="Profile" />
                     <section className="rounded-2xl border border-dashed border-gray-300 bg-white p-12 text-center dark:border-gray-700 dark:bg-gray-800">
                         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Loading profile...</h2>
@@ -132,8 +132,8 @@ export default function ProfilePage() {
     if (!profile) {
         return (
             <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-                <Navbar isLoggedIn />
-                <main className="mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:h-[calc(100vh-92px)] lg:grid-cols-[auto_1fr] lg:overflow-hidden lg:px-8">
+                <Navbar isLoggedIn mobileSidebarActive="Profile" />
+                <main className="mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 sm:px-6 md:h-[calc(100vh-92px)] md:grid-cols-[auto_1fr] md:overflow-hidden lg:px-8">
                     <Sidebar active="Profile" />
                     <section className="rounded-2xl border border-dashed border-red-300 bg-red-50 p-12 text-center dark:border-red-800 dark:bg-red-900/20">
                         <h2 className="text-lg font-semibold text-red-700 dark:text-red-300">Could not load profile</h2>
@@ -147,12 +147,12 @@ export default function ProfilePage() {
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-            <Navbar isLoggedIn />
+            <Navbar isLoggedIn mobileSidebarActive="Profile" />
 
-            <main className="mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:h-[calc(100vh-92px)] lg:grid-cols-[auto_1fr] lg:overflow-hidden lg:px-8">
+            <main className="mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 sm:px-6 md:h-[calc(100vh-92px)] md:grid-cols-[auto_1fr] md:overflow-hidden lg:px-8">
                 <Sidebar active="Profile" />
 
-                <div className="vyntra-scroll min-h-0 space-y-6 lg:h-full lg:overflow-y-auto lg:pr-2">
+                <div className="vyntra-scroll min-h-0 space-y-6 md:h-full md:overflow-y-auto md:pr-2">
                     <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
                         <div className="h-28 bg-linear-to-r from-blue-600 via-blue-500 to-cyan-500" />
                         <div className="px-6 pb-6">

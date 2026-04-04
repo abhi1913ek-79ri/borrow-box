@@ -11,12 +11,12 @@ const stats = [
 export default function DashboardPage() {
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-            <Navbar isLoggedIn />
+            <Navbar isLoggedIn mobileSidebarActive="Home" />
 
-            <main className="mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:h-[calc(100vh-92px)] lg:grid-cols-[auto_1fr] lg:overflow-hidden lg:px-8">
+            <main className="mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 sm:px-6 md:h-[calc(100vh-92px)] md:grid-cols-[auto_1fr] md:overflow-hidden lg:px-8">
                 <Sidebar active="Home" />
 
-                <div className="vyntra-scroll min-h-0 space-y-6 lg:h-full lg:overflow-y-auto lg:pr-2">
+                <div className="vyntra-scroll min-h-0 space-y-6 md:h-full md:overflow-y-auto md:pr-2">
                     <section className="grid gap-4 sm:grid-cols-3">
                         {stats.map((stat) => (
                             <article
