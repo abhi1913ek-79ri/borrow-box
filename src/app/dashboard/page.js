@@ -10,7 +10,7 @@ const stats = [
 
 export default function DashboardPage() {
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="min-h-screen bg-bg text-text">
             <Navbar isLoggedIn mobileSidebarActive="Home" />
 
             <main className="mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 sm:px-6 md:h-[calc(100vh-92px)] md:grid-cols-[auto_1fr] md:overflow-hidden lg:px-8">
@@ -21,19 +21,19 @@ export default function DashboardPage() {
                         {stats.map((stat) => (
                             <article
                                 key={stat.label}
-                                className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800"
+                                className="theme-card rounded-2xl border border-accent/20 bg-card p-5 shadow-sm"
                             >
-                                <p className="text-sm text-gray-500 dark:text-gray-400">{stat.label}</p>
-                                <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-gray-100">{stat.value}</p>
+                                <p className="text-sm text-text/70">{stat.label}</p>
+                                <p className="mt-2 text-2xl font-semibold text-text">{stat.value}</p>
                             </article>
                         ))}
                     </section>
 
                     <AddItemForm />
 
-                    <section className="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center dark:border-gray-700 dark:bg-gray-800">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">No recent activity</h3>
-                        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                    <section className="theme-card rounded-2xl border border-dashed border-accent/25 bg-card p-10 text-center">
+                        <h3 className="text-lg font-semibold text-text">No recent activity</h3>
+                        <p className="mt-2 text-sm text-text/70">
                             Once you receive bookings, updates will show here.
                         </p>
                     </section>

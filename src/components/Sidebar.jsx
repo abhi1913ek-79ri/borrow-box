@@ -65,12 +65,12 @@ export default function Sidebar({ active = "Home" }) {
 
     return (
         <aside
-            className={`vyntra-scroll hidden h-fit rounded-2xl border border-gray-200 bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-800 md:block md:h-full md:overflow-y-auto ${collapsed ? "w-21" : "w-full max-w-65"
+            className={`vyntra-scroll hidden h-fit rounded-2xl border border-accent/20 bg-card p-3 shadow-sm md:block md:h-full md:overflow-y-auto ${collapsed ? "w-21" : "w-full max-w-65"
                 }`}
         >
             <button
                 onClick={() => setCollapsed((prev) => !prev)}
-                className="mb-3 flex w-full items-center justify-center rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-700"
+                className="mb-3 flex w-full items-center justify-center rounded-2xl border border-accent/20 bg-bg/80 px-3 py-2 text-xs font-semibold text-text/80 hover:bg-accent/10"
             >
                 {collapsed ? "Expand" : "Collapse"}
             </button>
@@ -84,8 +84,8 @@ export default function Sidebar({ active = "Home" }) {
                             key={item.label}
                             href={item.href}
                             className={`group flex items-center rounded-2xl px-3 py-2.5 text-sm font-medium ${isActive
-                                ? "bg-blue-600 text-white shadow-sm"
-                                : "text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+                                ? "bg-primary text-bg shadow-sm"
+                                : "text-text hover:bg-accent/10"
                                 }`}
                         >
                             <span className="mr-3 inline-flex items-center justify-center">
@@ -102,7 +102,7 @@ export default function Sidebar({ active = "Home" }) {
 export function SidebarMenu({ active = "Home", onNavigate }) {
     return (
         <aside
-            className="rounded-2xl border border-gray-200 bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-800"
+            className="rounded-2xl border border-accent/20 bg-card p-3 shadow-sm"
         >
             <div className="space-y-1">
                 {menuItems.map((item) => {
@@ -114,8 +114,8 @@ export function SidebarMenu({ active = "Home", onNavigate }) {
                             href={item.href}
                             onClick={onNavigate}
                             className={`group flex items-center rounded-2xl px-3 py-2.5 text-sm font-medium ${isActive
-                                ? "bg-blue-600 text-white shadow-sm"
-                                : "text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+                                ? "bg-primary text-bg shadow-sm"
+                                : "text-text hover:bg-accent/10"
                                 }`}
                         >
                             <span className="mr-3 inline-flex items-center justify-center">

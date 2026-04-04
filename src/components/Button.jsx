@@ -6,15 +6,15 @@ export default function Button({
     ...props
 }) {
     const baseClass =
-        "inline-flex items-center justify-center rounded-2xl px-4 py-2.5 text-sm font-semibold transition-all duration-200 active:scale-[0.98]";
+        "inline-flex items-center justify-center rounded-2xl px-4 py-2.5 text-sm font-semibold shadow-sm transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98]";
 
     const variantClasses = {
         primary:
-            "bg-blue-600 text-white shadow-sm hover:bg-blue-700 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50",
+            "bg-primary text-bg shadow-primary/30 hover:shadow-md hover:shadow-primary/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
         secondary:
-            "border border-gray-200 bg-white text-gray-900 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700",
+            "border border-accent/25 bg-card text-text hover:bg-accent/10",
         ghost:
-            "text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800",
+            "text-text hover:bg-accent/10",
     };
 
     return (

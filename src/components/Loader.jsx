@@ -4,13 +4,13 @@ export default function Loader({ count = 6 }) {
             {Array.from({ length: count }).map((_, idx) => (
                 <div
                     key={idx}
-                    className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800"
+                    className="theme-card overflow-hidden rounded-2xl border border-accent/20 bg-card shadow-sm"
                 >
-                    <div className="h-44 animate-pulse bg-gray-200 dark:bg-gray-700" />
+                    <div className="h-44 animate-pulse bg-linear-to-br from-primary/25 via-accent/20 to-primary/10" />
                     <div className="space-y-3 p-4">
-                        <div className="h-4 w-3/4 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
-                        <div className="h-3 w-1/2 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
-                        <div className="h-9 w-full animate-pulse rounded-xl bg-gray-200 dark:bg-gray-700" />
+                        <div className="h-4 w-3/4 animate-pulse rounded bg-primary/20" />
+                        <div className="h-3 w-1/2 animate-pulse rounded bg-accent/20" />
+                        <div className="h-9 w-full animate-pulse rounded-xl bg-primary/15" />
                     </div>
                 </div>
             ))}

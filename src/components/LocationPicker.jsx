@@ -29,7 +29,7 @@ export default function LocationPicker({ latitude, longitude, onChange }) {
 
     return (
         <div className="space-y-3">
-            <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-blue-50/70 px-3 py-2 text-xs text-gray-600 dark:border-gray-700 dark:bg-blue-900/20 dark:text-gray-300">
+            <div className="flex items-center justify-between rounded-xl border border-accent/20 bg-primary/10 px-3 py-2 text-xs text-text/80">
                 <span>Map Picker (static UI)</span>
                 <span>
                     lat: {latitude.toFixed(4)} | lng: {longitude.toFixed(4)}
@@ -39,19 +39,19 @@ export default function LocationPicker({ latitude, longitude, onChange }) {
             <button
                 type="button"
                 onClick={handleMapClick}
-                className="relative h-48 w-full overflow-hidden rounded-2xl border border-gray-200 bg-linear-to-br from-sky-100 via-blue-100 to-indigo-100 dark:border-gray-700 dark:from-gray-800 dark:via-gray-800 dark:to-blue-950"
+                className="relative h-48 w-full overflow-hidden rounded-2xl border border-accent/20 bg-linear-to-br from-primary/15 via-accent/10 to-primary/20"
             >
                 <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(37,99,235,0.2),transparent_45%),radial-gradient(circle_at_70%_65%,rgba(14,165,233,0.2),transparent_45%)]" />
                 <div className="pointer-events-none absolute inset-0 grid grid-cols-6 grid-rows-4">
                     {Array.from({ length: 24 }).map((_, idx) => (
-                        <div key={idx} className="border border-white/30 dark:border-white/10" />
+                        <div key={idx} className="border border-white/15" />
                     ))}
                 </div>
                 <div
-                    className="pointer-events-none absolute h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-blue-600 shadow-lg"
+                    className="pointer-events-none absolute h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-bg bg-primary shadow-lg shadow-primary/30"
                     style={{ left: `${markerPosition.x}%`, top: `${markerPosition.y}%` }}
                 />
-                <p className="pointer-events-none absolute bottom-3 right-3 rounded-lg bg-white/80 px-2 py-1 text-xs font-medium text-gray-700 dark:bg-gray-900/80 dark:text-gray-200">
+                <p className="pointer-events-none absolute bottom-3 right-3 rounded-lg bg-card/85 px-2 py-1 text-xs font-medium text-text">
                     Click to pick
                 </p>
             </button>

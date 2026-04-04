@@ -4,8 +4,8 @@ export default function FeaturedItemsGrid({ items }) {
     return (
         <section className="space-y-4">
             <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Featured Items</h2>
-                <button className="text-sm font-medium text-blue-600 hover:text-blue-700">Explore all</button>
+                <h2 className="text-2xl font-semibold text-text">Featured Items</h2>
+                <button className="text-sm font-medium text-primary hover:text-accent">Explore all</button>
             </div>
 
             {items.length ? (
@@ -15,8 +15,8 @@ export default function FeaturedItemsGrid({ items }) {
                     ))}
                 </div>
             ) : (
-                <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center dark:border-gray-700 dark:bg-gray-800">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">No featured items yet. Add your first listing.</p>
+                <div className="theme-card rounded-2xl border border-dashed border-accent/25 bg-card/90 p-10 text-center text-text">
+                    <p className="text-sm text-text/70">No featured items yet. Add your first listing.</p>
                 </div>
             )}
         </section>

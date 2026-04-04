@@ -15,8 +15,8 @@ export default function CategorySection() {
     return (
         <section className="space-y-4">
             <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Browse Categories</h2>
-                <Link href="/items" className="text-sm font-medium text-blue-600 hover:text-blue-700">View all</Link>
+                <h2 className="text-2xl font-semibold text-text">Browse Categories</h2>
+                <Link href="/items" className="text-sm font-medium text-primary hover:text-accent">View all</Link>
             </div>
 
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
@@ -24,13 +24,13 @@ export default function CategorySection() {
                     <Link
                         key={category.value}
                         href={`/items?category=${encodeURIComponent(category.value)}`}
-                        className="group rounded-2xl border border-gray-200 bg-white p-4 text-left shadow-sm hover:-translate-y-1 hover:border-blue-200 hover:shadow-lg dark:border-gray-700 dark:bg-gray-800 dark:hover:border-blue-500/50"
+                        className="theme-card group rounded-2xl border border-accent/20 bg-card/90 p-4 text-left text-text shadow-sm hover:-translate-y-1 hover:border-primary/35 hover:shadow-lg"
                     >
-                        <div className="mb-3 grid h-10 w-10 place-items-center rounded-xl bg-blue-100 text-blue-700 group-hover:bg-blue-600 group-hover:text-white dark:bg-blue-900/40 dark:text-blue-300">
+                        <div className="mb-3 grid h-10 w-10 place-items-center rounded-xl bg-primary/15 text-primary group-hover:bg-primary group-hover:text-bg">
                             ■
                         </div>
-                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{category.label}</p>
-                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Find top listings</p>
+                        <p className="text-sm font-semibold text-text">{category.label}</p>
+                        <p className="mt-1 text-xs text-text/70">Find top listings</p>
                     </Link>
                 ))}
             </div>

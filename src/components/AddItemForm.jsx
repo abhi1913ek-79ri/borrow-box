@@ -53,49 +53,49 @@ export default function AddItemForm() {
     };
 
     return (
-        <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <section className="theme-card rounded-2xl border border-accent/20 bg-card p-6 shadow-sm">
             <div className="mb-6">
-                <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Add New Item</h2>
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Schema-based listing form with location typing + map coordinate picker.</p>
+                <h2 className="text-2xl font-semibold text-text">Add New Item</h2>
+                <p className="mt-1 text-sm text-text/70">Schema-based listing form with location typing + map coordinate picker.</p>
             </div>
 
             <form className="grid gap-4 sm:grid-cols-2" onSubmit={handleSubmit}>
                 <label className="sm:col-span-2">
-                    <span className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Title</span>
+                    <span className="mb-1 block text-sm font-medium text-text">Title</span>
                     <input
                         name="title"
                         type="text"
                         required
                         placeholder="Bosch Drill Machine"
-                        className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                        className="h-11 w-full rounded-xl border border-accent/20 bg-bg/80 px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
                     />
                 </label>
 
                 <label className="sm:col-span-2">
-                    <span className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Description</span>
+                    <span className="mb-1 block text-sm font-medium text-text">Description</span>
                     <textarea
                         name="description"
                         rows={4}
                         required
                         placeholder="Heavy duty drill machine for home use"
-                        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                        className="w-full rounded-xl border border-accent/20 bg-bg/80 px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
                     />
                 </label>
 
                 <label>
-                    <span className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Item Type</span>
+                    <span className="mb-1 block text-sm font-medium text-text">Item Type</span>
                     <input
                         name="itemType"
                         type="text"
                         required
                         placeholder="tool"
-                        className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                        className="h-11 w-full rounded-xl border border-accent/20 bg-bg/80 px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
                     />
                 </label>
 
                 <label>
-                    <span className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Category</span>
-                    <select name="category" defaultValue="power-tools" className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100">
+                    <span className="mb-1 block text-sm font-medium text-text">Category</span>
+                    <select name="category" defaultValue="power-tools" className="h-11 w-full rounded-xl border border-accent/20 bg-bg/80 px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/40">
                         {itemCatalogConfig.categories
                             .filter((category) => category !== "all")
                             .map((category) => (
@@ -107,95 +107,95 @@ export default function AddItemForm() {
                 </label>
 
                 <label>
-                    <span className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Price Per Day</span>
+                    <span className="mb-1 block text-sm font-medium text-text">Price Per Day</span>
                     <input
                         name="pricePerDay"
                         type="number"
                         required
                         min="0"
                         placeholder="100"
-                        className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                        className="h-11 w-full rounded-xl border border-accent/20 bg-bg/80 px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
                     />
                 </label>
 
                 <label>
-                    <span className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Price Per Hour</span>
+                    <span className="mb-1 block text-sm font-medium text-text">Price Per Hour</span>
                     <input
                         name="pricePerHour"
                         type="number"
                         required
                         min="0"
                         placeholder="20"
-                        className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                        className="h-11 w-full rounded-xl border border-accent/20 bg-bg/80 px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
                     />
                 </label>
 
                 <label>
-                    <span className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Deposit Amount</span>
+                    <span className="mb-1 block text-sm font-medium text-text">Deposit Amount</span>
                     <input
                         name="depositAmount"
                         type="number"
                         required
                         min="0"
                         placeholder="500"
-                        className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                        className="h-11 w-full rounded-xl border border-accent/20 bg-bg/80 px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
                     />
                 </label>
 
                 <label className="flex items-center gap-2 self-end pb-2">
-                    <input name="isAvailable" type="checkbox" defaultChecked className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Availability: isAvailable</span>
+                    <input name="isAvailable" type="checkbox" defaultChecked className="h-4 w-4 rounded border-accent/20 text-primary focus:ring-primary" />
+                    <span className="text-sm font-medium text-text">Availability: isAvailable</span>
                 </label>
 
                 <label className="sm:col-span-2">
-                    <span className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Images (array)</span>
-                    <div className="flex h-28 items-center justify-center rounded-xl border border-dashed border-gray-300 bg-gray-50 text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400">
+                    <span className="mb-1 block text-sm font-medium text-text">Images (array)</span>
+                    <div className="flex h-28 items-center justify-center rounded-xl border border-dashed border-accent/25 bg-bg/70 text-sm text-text/70">
                         Drag image files here (url1, url2...)
                     </div>
                 </label>
 
                 <label className="sm:col-span-2">
-                    <span className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Location Address</span>
+                    <span className="mb-1 block text-sm font-medium text-text">Location Address</span>
                     <input
                         name="address"
                         type="text"
                         required
                         placeholder="Karawal Nagar"
-                        className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                        className="h-11 w-full rounded-xl border border-accent/20 bg-bg/80 px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
                     />
                 </label>
 
                 <label>
-                    <span className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">City</span>
+                    <span className="mb-1 block text-sm font-medium text-text">City</span>
                     <input
                         name="city"
                         type="text"
                         required
                         placeholder="Delhi"
-                        className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                        className="h-11 w-full rounded-xl border border-accent/20 bg-bg/80 px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
                     />
                 </label>
 
                 <div className="grid grid-cols-2 gap-3">
                     <label>
-                        <span className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Latitude</span>
+                        <span className="mb-1 block text-sm font-medium text-text">Latitude</span>
                         <input
                             type="number"
                             step="0.0001"
                             value={latitude}
                             onChange={(event) => onLocationChange(Number(event.target.value), longitude)}
-                            className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                            className="h-11 w-full rounded-xl border border-accent/20 bg-bg/80 px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
                         />
                     </label>
 
                     <label>
-                        <span className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Longitude</span>
+                        <span className="mb-1 block text-sm font-medium text-text">Longitude</span>
                         <input
                             type="number"
                             step="0.0001"
                             value={longitude}
                             onChange={(event) => onLocationChange(latitude, Number(event.target.value))}
-                            className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                            className="h-11 w-full rounded-xl border border-accent/20 bg-bg/80 px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
                         />
                     </label>
                 </div>
@@ -204,19 +204,19 @@ export default function AddItemForm() {
                     <LocationPicker latitude={latitude} longitude={longitude} onChange={onLocationChange} />
                 </div>
 
-                <div className="sm:col-span-2 rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm dark:border-gray-700 dark:bg-gray-900">
-                    <p className="font-medium text-gray-800 dark:text-gray-200">Auto-managed fields (backend-generated in real app)</p>
-                    <p className="mt-1 text-gray-500 dark:text-gray-400">owner, rating, totalReviews, createdAt, updatedAt</p>
+                <div className="sm:col-span-2 rounded-xl border border-accent/20 bg-bg/70 p-3 text-sm">
+                    <p className="font-medium text-text">Auto-managed fields (backend-generated in real app)</p>
+                    <p className="mt-1 text-text/70">owner, rating, totalReviews, createdAt, updatedAt</p>
                 </div>
 
                 {submitError && (
-                    <div className="sm:col-span-2 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
+                    <div className="sm:col-span-2 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-600">
                         {submitError}
                     </div>
                 )}
 
                 {submitMessage && (
-                    <div className="sm:col-span-2 rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300">
+                    <div className="sm:col-span-2 rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
                         {submitMessage}
                     </div>
                 )}

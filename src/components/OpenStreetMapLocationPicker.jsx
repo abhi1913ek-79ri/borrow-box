@@ -43,9 +43,9 @@ export default function OpenStreetMapLocationPicker({
                         width: 18px;
                         height: 18px;
                         border-radius: 9999px;
-                        background: linear-gradient(180deg, #3b82f6, #2563eb);
-                        border: 3px solid white;
-                        box-shadow: 0 10px 18px rgba(37, 99, 235, 0.28);
+                        background: linear-gradient(180deg, var(--primary), var(--accent));
+                        border: 3px solid var(--bg);
+                        box-shadow: 0 10px 18px color-mix(in srgb, var(--primary) 28%, transparent);
                     "></div>
                 `,
                 iconSize: [18, 18],
@@ -58,14 +58,14 @@ export default function OpenStreetMapLocationPicker({
 
     return (
         <div className="space-y-3">
-            <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+            <div className="flex items-center justify-between text-xs text-text/70">
                 <span>OpenStreetMap Picker</span>
                 <span>
                     {latitude.toFixed(4)}, {longitude.toFixed(4)}
                 </span>
             </div>
 
-            <div className="overflow-hidden rounded-2xl border border-gray-200 shadow-sm dark:border-gray-700">
+            <div className="overflow-hidden rounded-2xl border border-accent/20 shadow-sm">
                 <MapContainer
                     center={center}
                     zoom={DEFAULT_ZOOM}
@@ -82,14 +82,14 @@ export default function OpenStreetMapLocationPicker({
                 </MapContainer>
             </div>
 
-            <div className="flex items-center justify-between gap-3 rounded-xl bg-blue-50/70 px-3 py-2 text-xs text-gray-600 dark:bg-blue-900/20 dark:text-gray-300">
+            <div className="flex items-center justify-between gap-3 rounded-xl bg-primary/10 px-3 py-2 text-xs text-text/80">
                 <span>
                     Live location: {liveLocationStatus === "granted" ? "enabled" : liveLocationStatus === "denied" ? "blocked" : liveLocationStatus === "requesting" ? "requesting" : "idle"}
                 </span>
                 <button
                     type="button"
                     onClick={onUseLiveLocation}
-                    className="rounded-lg bg-blue-600 px-3 py-1.5 font-semibold text-white hover:bg-blue-700"
+                    className="rounded-lg bg-primary px-3 py-1.5 font-semibold text-bg hover:-translate-y-0.5"
                 >
                     Use live location
                 </button>

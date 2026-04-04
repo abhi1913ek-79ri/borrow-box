@@ -4,14 +4,14 @@ import Navbar from "@/components/Navbar";
 
 export default function AddItemAccessPage() {
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="min-h-screen bg-bg text-text">
             <Navbar />
 
             <main className="mx-auto flex w-full max-w-7xl items-center justify-center px-4 py-10 sm:px-6 lg:px-8">
-                <section className="w-full max-w-xl rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600 dark:text-blue-300">Add Listing</p>
-                    <h1 className="mt-2 text-2xl font-semibold text-gray-900 dark:text-gray-100">Please login to add a new item</h1>
-                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                <section className="theme-card w-full max-w-xl rounded-2xl border border-accent/20 bg-card p-6 shadow-sm">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Add Listing</p>
+                    <h1 className="mt-2 text-2xl font-semibold text-text">Please login to add a new item</h1>
+                    <p className="mt-2 text-sm text-text/70">
                         You need an account to create listings. Login first, then you can publish your item from the dashboard form.
                     </p>
 

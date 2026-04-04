@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Button from "./Button";
-import ThemeToggle from "./ThemeToggle";
+import ThemeSwitcher from "./ThemeSwitcher";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { SidebarMenu } from "./Sidebar";
@@ -19,89 +19,114 @@ export default function Navbar({ isLoggedIn = false, mobileSidebarActive = "" })
     };
 
     return (
-        <header className="sticky top-0 z-40 border-b border-gray-200/70 bg-white/90 backdrop-blur-xl dark:border-gray-800 dark:bg-gray-900/90">
+        <header className="theme-surface sticky top-0 z-40 border-b border-accent/20 bg-card/80 backdrop-blur-xl">
             <nav className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:gap-4 sm:px-6 lg:px-8">
                 <Link href="/" className="group flex items-center gap-2">
-                    <div className="grid h-10 w-10 place-items-center rounded-2xl bg-blue-600 text-base font-bold text-white shadow-md shadow-blue-600/30 group-hover:scale-105">
+                    <div className="grid h-10 w-10 place-items-center rounded-2xl bg-primary text-base font-bold text-bg shadow-md shadow-primary/40 group-hover:-translate-y-0.5">
                         V
                     </div>
                     <div className="leading-tight">
-                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Vyntra</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Share. Rent. Earn.</p>
+                        <p className="text-sm font-semibold text-text">Vyntra</p>
+                        <p className="text-xs text-text/70">Share. Rent. Earn.</p>
                     </div>
                 </Link>
 
                 <form onSubmit={handleSearch} className="hidden flex-1 justify-center md:flex">
-                    <div className="flex w-full max-w-xl items-center rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                    <div className="theme-card flex w-full max-w-xl items-center rounded-2xl border border-accent/20 bg-card px-3 py-2 shadow-sm">
                         <input
                             type="text"
                             value={query}
                             onChange={(event) => setQuery(event.target.value)}
                             placeholder="Search cameras, bikes, consoles..."
-                            className="w-full bg-transparent text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none dark:text-gray-100"
+                            className="w-full bg-transparent text-sm text-text placeholder:text-text/60 focus:outline-none"
                         />
-                        <button type="submit" className="ml-2 rounded-xl bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-blue-700">
+                        <Button type="submit" className="ml-2 rounded-xl px-3 py-1.5 text-sm">
                             Search
-                        </button>
+                        </Button>
                     </div>
                 </form>
 
                 <div className="ml-auto flex items-center gap-2 sm:gap-3">
-                    <ThemeToggle />
+                    <ThemeSwitcher className="hidden md:flex" />
                     <Link href={addItemHref} className="hidden md:block">
-                        <Button className="bg-linear-to-r from-blue-600 via-blue-500 to-cyan-500 px-3 shadow-md shadow-blue-600/30 hover:from-blue-500 hover:via-blue-500 hover:to-cyan-400 sm:px-4">
+                        <Button className="px-3 sm:px-4">
                             Add New Item
                         </Button>
                     </Link>
                     {isLoggedIn ? (
                         <>
-                            {mobileSidebarActive ? (
-                                <button
-                                    type="button"
-                                    onClick={() => setIsMobileMenuOpen((prev) => !prev)}
-                                    className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-gray-50 text-gray-700 md:hidden dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
-                                    aria-label="Open menu"
-                                >
-                                    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M3 6h18M3 12h18M3 18h18" />
-                                    </svg>
-                                </button>
-                            ) : null}
-
-                            <Link href="/profile" className={mobileSidebarActive ? "hidden md:block" : "block"}>
+                            <Link href="/profile" className="hidden md:block">
                                 <Button variant="secondary" className="px-3 sm:px-4">
                                     Profile
                                 </Button>
                             </Link>
                         </>
                     ) : (
-                        <Link href="/login">
+                        <Link href="/login" className="hidden md:block">
                             <Button className="px-3 sm:px-4">Login</Button>
                         </Link>
                     )}
+
+                    <button
+                        type="button"
+                        onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+                        className="ml-auto inline-flex h-10 w-10 items-center justify-center rounded-xl border border-accent/20 bg-card text-text md:hidden"
+                        aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+                        aria-expanded={isMobileMenuOpen}
+                        aria-controls="mobile-nav-panel"
+                    >
+                        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M3 6h18M3 12h18M3 18h18" />
+                        </svg>
+                    </button>
                 </div>
             </nav>
 
             <div className="mx-auto px-4 pb-3 md:hidden sm:px-6 lg:px-8">
-                <form onSubmit={handleSearch} className="flex items-center rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2 dark:border-gray-700 dark:bg-gray-800">
+                <form onSubmit={handleSearch} className="theme-card flex items-center rounded-2xl border border-accent/20 bg-card px-3 py-2">
                     <input
                         type="text"
                         value={query}
                         onChange={(event) => setQuery(event.target.value)}
                         placeholder="Search items"
-                        className="w-full bg-transparent text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none dark:text-gray-100"
+                        className="w-full bg-transparent text-sm text-text placeholder:text-text/60 focus:outline-none"
                     />
-                    <button type="submit" className="ml-2 rounded-xl bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700">
+                    <Button type="submit" className="ml-2 rounded-xl px-3 py-1.5 text-xs">
                         Go
-                    </button>
+                    </Button>
                 </form>
 
-                {isLoggedIn && mobileSidebarActive && isMobileMenuOpen && (
-                    <div className="mt-3">
-                        <SidebarMenu
-                            active={mobileSidebarActive}
-                            onNavigate={() => setIsMobileMenuOpen(false)}
+                {isMobileMenuOpen && (
+                    <div id="mobile-nav-panel" className="mt-3 flex min-h-[calc(100dvh-10.5rem)] flex-col gap-3 overflow-y-auto border border-accent/20 bg-card p-3">
+                        <Link href={addItemHref} onClick={() => setIsMobileMenuOpen(false)}>
+                            <Button className="w-full justify-start">Add New Item</Button>
+                        </Link>
+
+                        {isLoggedIn ? (
+                            <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)}>
+                                <Button variant="secondary" className="w-full justify-start">
+                                    Profile
+                                </Button>
+                            </Link>
+                        ) : (
+                            <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                                <Button className="w-full justify-start">Login</Button>
+                            </Link>
+                        )}
+
+                        <ThemeSwitcher
+                            className="w-full"
+                            buttonClassName="w-full justify-between text-left"
+                            menuClassName="left-0 right-0"
+                            itemClassName="text-left"
                         />
+
+                        {isLoggedIn && mobileSidebarActive && (
+                            <SidebarMenu
+                                active={mobileSidebarActive}
+                                onNavigate={() => setIsMobileMenuOpen(false)}
+                            />
+                        )}
                     </div>
                 )}
             </div>

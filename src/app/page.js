@@ -15,7 +15,7 @@ const featuredItems = [
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-bg text-text">
       <Navbar />
 
       <main className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-4 py-6 sm:px-6 lg:px-8">
@@ -25,8 +25,8 @@ export default function Home() {
 
         <section className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Loading State</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Skeleton UI preview</p>
+            <h2 className="text-2xl font-semibold text-text">Loading State</h2>
+            <p className="text-sm text-text/70">Skeleton UI preview</p>
           </div>
           <Loader count={3} />
         </section>

@@ -30,7 +30,7 @@ function GoogleMapPickerBody({ latitude, longitude, onChange, onUseLiveLocation,
 
     if (loadError) {
         return (
-            <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-300">
+            <div className="rounded-2xl border border-red-200 bg-card p-4 text-sm text-red-600">
                 Google Maps failed to load. Check your API key and billing setup.
             </div>
         );
@@ -38,7 +38,7 @@ function GoogleMapPickerBody({ latitude, longitude, onChange, onUseLiveLocation,
 
     if (!isLoaded) {
         return (
-            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400">
+            <div className="rounded-2xl border border-accent/20 bg-card p-4 text-sm text-text/70">
                 Loading Google Map picker...
             </div>
         );
@@ -46,14 +46,14 @@ function GoogleMapPickerBody({ latitude, longitude, onChange, onUseLiveLocation,
 
     return (
         <div className="space-y-3">
-            <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+            <div className="flex items-center justify-between text-xs text-text/70">
                 <span>Google Map Picker</span>
                 <span>
                     {latitude.toFixed(4)}, {longitude.toFixed(4)}
                 </span>
             </div>
 
-            <div className="overflow-hidden rounded-2xl border border-gray-200 shadow-sm dark:border-gray-700">
+            <div className="overflow-hidden rounded-2xl border border-accent/20 shadow-sm">
                 <GoogleMap
                     mapContainerStyle={{ width: "100%", height: "220px" }}
                     center={center}
@@ -78,14 +78,14 @@ function GoogleMapPickerBody({ latitude, longitude, onChange, onUseLiveLocation,
                 </GoogleMap>
             </div>
 
-            <div className="flex items-center justify-between gap-3 rounded-xl bg-blue-50/70 px-3 py-2 text-xs text-gray-600 dark:bg-blue-900/20 dark:text-gray-300">
+            <div className="flex items-center justify-between gap-3 rounded-xl bg-primary/10 px-3 py-2 text-xs text-text/80">
                 <span>
                     Live location: {liveLocationStatus === "granted" ? "enabled" : liveLocationStatus === "denied" ? "blocked" : liveLocationStatus === "requesting" ? "requesting" : "idle"}
                 </span>
                 <button
                     type="button"
                     onClick={onUseLiveLocation}
-                    className="rounded-lg bg-blue-600 px-3 py-1.5 font-semibold text-white hover:bg-blue-700"
+                    className="rounded-lg bg-primary px-3 py-1.5 font-semibold text-bg hover:-translate-y-0.5"
                 >
                     Use live location
                 </button>
@@ -106,13 +106,13 @@ export default function GoogleLocationPicker({
     if (!apiKey) {
         return (
             <div className="space-y-3">
-                <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                <div className="flex items-center justify-between text-xs text-text/70">
                     <span>Google Map Picker</span>
                     <span>
                         {latitude.toFixed(4)}, {longitude.toFixed(4)}
                     </span>
                 </div>
-                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700 dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-300">
+                <div className="rounded-2xl border border-amber-200 bg-card p-4 text-sm text-amber-700">
                     Add <span className="font-semibold">NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</span> to enable the real Google Map picker.
                     <div className="mt-2">
                         The current page still requests live location and can filter nearby items.
@@ -121,7 +121,7 @@ export default function GoogleLocationPicker({
                 <button
                     type="button"
                     onClick={onUseLiveLocation}
-                    className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-900 shadow-sm hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
+                    className="w-full rounded-2xl border border-accent/20 bg-card px-4 py-2.5 text-sm font-semibold text-text shadow-sm hover:-translate-y-0.5 hover:bg-accent/10"
                 >
                     Use live location
                 </button>
