@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { signIn } from "next-auth/react";
 import Button from "./Button";
@@ -19,8 +19,6 @@ function GoogleIcon() {
 
 export default function GoogleAuthModal({ open, onClose, callbackUrl = "/" }) {
     const { theme } = useTheme();
-    const handleClose = () => onClose();
-
 
     useEffect(() => {
         if (!open) {
@@ -43,11 +41,7 @@ export default function GoogleAuthModal({ open, onClose, callbackUrl = "/" }) {
         };
     }, [open, onClose]);
 
-    if (!open) {
-        return null;
-    }
-
-    if (typeof window === "undefined") {
+    if (!open || typeof window === "undefined") {
         return null;
     }
 
@@ -65,7 +59,7 @@ export default function GoogleAuthModal({ open, onClose, callbackUrl = "/" }) {
             className="fixed inset-0 z-50 grid place-items-center bg-slate-950/70 px-4 py-8"
             onClick={(event) => {
                 if (event.target === event.currentTarget) {
-                    handleClose();
+                    onClose();
                 }
             }}
         >
@@ -79,10 +73,7 @@ export default function GoogleAuthModal({ open, onClose, callbackUrl = "/" }) {
 
                 <button
                     type="button"
-                    onClick={(event) => {
-                        event.stopPropagation();
-                        handleClose();
-                    }}
+                    onClick={onClose}
                     className="absolute right-4 top-4 z-10 rounded-full border border-accent/20 bg-bg/70 p-2 text-text/70 hover:bg-accent/10 hover:text-text"
                     aria-label="Close sign in dialog"
                 >
@@ -120,8 +111,7 @@ export default function GoogleAuthModal({ open, onClose, callbackUrl = "/" }) {
                     </p>
                 </div>
             </div>
-        </div>
-        ,
+        </div>,
         document.body,
     );
 }

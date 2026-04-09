@@ -1,5 +1,3 @@
-<<<<<<< Updated upstream
-=======
 "use client";
 
 import Link from "next/link";
@@ -266,4 +264,3 @@ export default function Navbar({ isLoggedIn = false, mobileSidebarActive = "" })
         </header>
     );
 }
->>>>>>> Stashed changes

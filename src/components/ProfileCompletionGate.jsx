@@ -132,7 +132,7 @@ export default function ProfileCompletionGate() {
         }
 
         if (!PHONE_REGEX.test(phone)) {
-            setError("Please enter a valid mobile number.");
+            setError("Please enter a valid 10-digit mobile number.");
             return;
         }
 
@@ -183,7 +183,7 @@ export default function ProfileCompletionGate() {
         <div className="fixed inset-0 z-60 grid place-items-center bg-slate-950/80 px-4 py-6">
             <div
                 ref={dialogRef}
-            className={`relative w-full max-w-xl overflow-hidden rounded-4xl border border-accent/20 bg-card text-text shadow-2xl shadow-black/30 ${theme === "glass" ? "backdrop-blur-xl" : ""}`}
+                className={`relative w-full max-w-xl overflow-hidden rounded-4xl border border-accent/20 bg-card text-text shadow-2xl shadow-black/30 ${theme === "glass" ? "backdrop-blur-xl" : ""}`}
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="profile-completion-title"
