@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { signIn } from "next-auth/react";
 import Button from "./Button";
@@ -17,8 +17,18 @@ function GoogleIcon() {
     );
 }
 
+function SpinnerIcon() {
+    return (
+        <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle className="opacity-25" cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
+            <path className="opacity-75" fill="currentColor" d="M12 3a9 9 0 0 1 9 9h-2a7 7 0 1 0-7 7v2a9 9 0 0 1 0-18Z" />
+        </svg>
+    );
+}
+
 export default function GoogleAuthModal({ open, onClose, callbackUrl = "/" }) {
     const { theme } = useTheme();
+    const [isSigningIn, setIsSigningIn] = useState(false);
 
     useEffect(() => {
         if (!open) {
@@ -44,6 +54,20 @@ export default function GoogleAuthModal({ open, onClose, callbackUrl = "/" }) {
     if (!open || typeof window === "undefined") {
         return null;
     }
+
+    const handleGoogleSignIn = async () => {
+        if (isSigningIn) {
+            return;
+        }
+
+        setIsSigningIn(true);
+
+        try {
+            await signIn("google", { callbackUrl });
+        } catch {
+            setIsSigningIn(false);
+        }
+    };
 
     const themeAccent = {
         light: "from-primary/20 via-card to-accent/20",
@@ -98,11 +122,13 @@ export default function GoogleAuthModal({ open, onClose, callbackUrl = "/" }) {
                     <div className="mt-7 w-full">
                         <Button
                             type="button"
-                            className="w-full gap-3 rounded-2xl py-3.5 text-sm shadow-md shadow-primary/20 cursor-pointer"
-                            onClick={() => signIn("google", { callbackUrl })}
+                            className="w-full gap-3 rounded-2xl py-3.5 text-sm shadow-md shadow-primary/20"
+                            onClick={handleGoogleSignIn}
+                            disabled={isSigningIn}
+                            aria-busy={isSigningIn}
                         >
-                            <GoogleIcon />
-                            Continue with Google
+                            {isSigningIn ? <SpinnerIcon /> : <GoogleIcon />}
+                            {isSigningIn ? "Redirecting to Google..." : "Continue with Google"}
                         </Button>
                     </div>
 
