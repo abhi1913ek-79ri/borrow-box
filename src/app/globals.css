@@ -1,26 +1,131 @@
+@import "leaflet/dist/leaflet.css";
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #f4f8fc;
+  --card: #ffffff;
+  --text: #182235;
+  --primary: #1d4ed8;
+  --accent: #06b6d4;
+}
+
+[data-theme="dark"] {
+  --bg: #0f172a;
+  --card: #1e293b;
+  --text: #f8fafc;
+  --primary: #2563eb;
+  --accent: #22d3ee;
+}
+
+[data-theme="neon"] {
+  --bg: #060816;
+  --card: #0f172a;
+  --text: #e6f9ff;
+  --primary: #22d3ee;
+  --accent: #a855f7;
+}
+
+[data-theme="glass"] {
+  --bg: #e9f3ff;
+  --card: rgba(255, 255, 255, 0.45);
+  --text: #10233f;
+  --primary: #2563eb;
+  --accent: #06b6d4;
+}
+
+[data-theme="sunset"] {
+  --bg: #fff6ef;
+  --card: #fff1e4;
+  --text: #4b2718;
+  --primary: #ea580c;
+  --accent: #fb923c;
+}
+
+[data-theme="aurora"] {
+  --bg: #06141a;
+  --card: #0f2530;
+  --text: #d8f7ff;
+  --primary: #06b6d4;
+  --accent: #22c55e;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-bg: var(--bg);
+  --color-card: var(--card);
+  --color-text: var(--text);
+  --color-primary: var(--primary);
+  --color-accent: var(--accent);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+[data-theme="sunset"] body {
+  background-image:
+    radial-gradient(
+      circle at 12% 10%,
+      rgba(251, 146, 60, 0.16),
+      transparent 48%
+    ),
+    radial-gradient(circle at 82% 14%, rgba(234, 88, 12, 0.14), transparent 46%);
+}
+
+[data-theme="dark"] body {
+  background-image: none;
+}
+
+[data-theme="neon"] body {
+  background-image:
+    radial-gradient(
+      circle at 12% 8%,
+      rgba(34, 211, 238, 0.16),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at 82% 12%,
+      rgba(168, 85, 247, 0.14),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 50% 100%,
+      rgba(34, 197, 94, 0.08),
+      transparent 24%
+    );
+}
+
+[data-theme="glass"] .theme-card,
+[data-theme="glass"] .theme-surface {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+* {
+  transition: all 0.3s ease;
+}
+
+.vyntra-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary) transparent;
+}
+
+.vyntra-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.vyntra-scroll::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 999px;
+}
+
+.vyntra-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--accent), var(--primary));
+  border-radius: 999px;
 }
