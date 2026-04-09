@@ -3,6 +3,8 @@ import User from "@/models/User";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 
+const PHONE_REGEX = /^[0-9]{10}$/;
+
 export async function PATCH(req) {
   try {
     const session = await getServerSession(authOptions);
@@ -16,6 +18,16 @@ export async function PATCH(req) {
 
     const body = await req.json();
     const { name, phone, address } = body;
+
+    if (!PHONE_REGEX.test(String(phone || "").trim())) {
+      return new Response(
+        JSON.stringify({ error: "Please enter a valid 10-digit mobile number" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
 
     if (!name || !phone || !address) {
       return new Response(
