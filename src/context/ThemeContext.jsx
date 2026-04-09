@@ -11,14 +11,14 @@ const ThemeContext = createContext({
 });
 
 export function ThemeProvider({ children }) {
-    const [theme, setThemeState] = useState("light");
-
-    useEffect(() => {
-        const storedTheme = window.localStorage.getItem("theme");
-        if (storedTheme && THEMES.includes(storedTheme)) {
-            setThemeState(storedTheme);
+    const [theme, setThemeState] = useState(() => {
+        if (typeof window === "undefined") {
+            return "light";
         }
-    }, []);
+
+        const storedTheme = window.localStorage.getItem("theme");
+        return storedTheme && THEMES.includes(storedTheme) ? storedTheme : "light";
+    });
 
     useEffect(() => {
         const html = document.documentElement;

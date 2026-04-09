@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import Button from "@/components/Button";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
@@ -14,6 +15,7 @@ function formatDateTime(value) {
 }
 
 export default function ProfilePage() {
+    const { status } = useSession();
     const [profile, setProfile] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
     const [isLoadingProfile, setIsLoadingProfile] = useState(true);
@@ -51,8 +53,10 @@ export default function ProfilePage() {
     };
 
     useEffect(() => {
-        loadProfile();
-    }, []);
+        if (status === "authenticated") {
+            loadProfile();
+        }
+    }, [status]);
 
     const handleFieldChange = (event) => {
         const { name, value } = event.target;
@@ -158,11 +162,16 @@ export default function ProfilePage() {
                         <div className="px-6 pb-6">
                             <div className="-mt-14 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                                 <div className="flex items-end gap-4">
-                                    <div className="grid h-28 w-28 place-items-center rounded-2xl border-4 border-bg bg-linear-to-br from-primary via-primary/90 to-accent text-3xl font-bold text-bg shadow-md shadow-primary/30">
-                                        {profile.name
-                                            .split(" ")
-                                            .map((part) => part[0])
-                                            .join("")}
+                                    <div className="grid h-28 w-28 place-items-center overflow-hidden border-4 border-bg bg-linear-to-br from-primary via-primary/90 to-accent text-3xl font-bold rounded-full text-bg shadow-md shadow-primary/30">
+                                        {profile.profileImage ? (
+                                            // eslint-disable-next-line @next/next/no-img-element
+                                            <img src={profile.profileImage} alt={profile.name} className="h-full w-full object-cover" />
+                                        ) : (
+                                            profile.name
+                                                .split(" ")
+                                                .map((part) => part[0])
+                                                .join("")
+                                        )}
                                     </div>
                                     <div className="pb-2">
                                         {isEditing ? (
@@ -170,13 +179,6 @@ export default function ProfilePage() {
                                                 <input
                                                     name="name"
                                                     value={formState.name}
-                                                    onChange={handleFieldChange}
-                                                    className="h-10 w-full rounded-xl border border-accent/20 bg-bg/80 px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
-                                                />
-                                                <input
-                                                    name="email"
-                                                    type="email"
-                                                    value={formState.email}
                                                     onChange={handleFieldChange}
                                                     className="h-10 w-full rounded-xl border border-accent/20 bg-bg/80 px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
                                                 />
@@ -222,10 +224,6 @@ export default function ProfilePage() {
                                     ) : (
                                         <p className="font-medium text-text">{profile.phone}</p>
                                     )}
-                                </div>
-                                <div className="rounded-xl bg-bg/80 p-3">
-                                    <p className="text-text/70">Password</p>
-                                    <p className="font-medium text-text">{profile.password}</p>
                                 </div>
                             </div>
                         </article>

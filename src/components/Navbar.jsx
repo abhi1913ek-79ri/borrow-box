@@ -4,14 +4,47 @@ import Link from "next/link";
 import Button from "./Button";
 import ThemeSwitcher from "./ThemeSwitcher";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { signOut, useSession } from "next-auth/react";
 import { SidebarMenu } from "./Sidebar";
+import GoogleAuthModal from "./GoogleAuthModal";
+import LogoutConfirmModal from "./LogoutConfirmModal";
 
 export default function Navbar({ isLoggedIn = false, mobileSidebarActive = "" }) {
     const router = useRouter();
+    const { data: session, status } = useSession();
     const [query, setQuery] = useState("");
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const addItemHref = isLoggedIn ? "/dashboard" : "/add-item";
+    const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+    const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+    const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+    const profileMenuRef = useRef(null);
+    const isAuthenticated = isLoggedIn || status === "authenticated";
+    const userName = session?.user?.name || "Profile";
+    const userImage = session?.user?.profileImage || session?.user?.image || "";
+    const addItemHref = isAuthenticated ? "/add-item" : "/login";
+
+    useEffect(() => {
+        const handlePointerDown = (event) => {
+            if (!profileMenuRef.current?.contains(event.target)) {
+                setIsProfileMenuOpen(false);
+            }
+        };
+
+        const handleKeyDown = (event) => {
+            if (event.key === "Escape") {
+                setIsProfileMenuOpen(false);
+            }
+        };
+
+        document.addEventListener("mousedown", handlePointerDown);
+        document.addEventListener("keydown", handleKeyDown);
+
+        return () => {
+            document.removeEventListener("mousedown", handlePointerDown);
+            document.removeEventListener("keydown", handleKeyDown);
+        };
+    }, []);
 
     const handleSearch = (event) => {
         event.preventDefault();
@@ -48,23 +81,78 @@ export default function Navbar({ isLoggedIn = false, mobileSidebarActive = "" })
 
                 <div className="ml-auto flex items-center gap-2 sm:gap-3">
                     <ThemeSwitcher className="hidden md:flex" />
-                    <Link href={addItemHref} className="hidden md:block">
-                        <Button className="px-3 sm:px-4">
+                    {isAuthenticated ? (
+                        <Link href={addItemHref} className="hidden md:block">
+                            <Button className="px-3 sm:px-4">
+                                Add New Item
+                            </Button>
+                        </Link>
+                    ) : (
+                        <Button
+                            className="hidden px-3 sm:px-4 md:inline-flex cursor-pointer"
+                            onClick={() => setIsLoginModalOpen(true)}
+                        >
                             Add New Item
                         </Button>
-                    </Link>
-                    {isLoggedIn ? (
-                        <>
-                            <Link href="/profile" className="hidden md:block">
-                                <Button variant="secondary" className="px-3 sm:px-4">
-                                    Profile
-                                </Button>
-                            </Link>
-                        </>
+                    )}
+
+                    {isAuthenticated ? (
+                        <div ref={profileMenuRef} className="relative hidden md:block">
+                            <button
+                                type="button"
+                                onClick={() => setIsProfileMenuOpen((prev) => !prev)}
+                                className="flex h-11 items-center gap-2 rounded-2xl border border-accent/20 bg-card px-2.5 pr-3 text-left text-text shadow-sm hover:bg-accent/10"
+                                aria-haspopup="menu"
+                                aria-expanded={isProfileMenuOpen}
+                            >
+                                <span className="grid h-8 w-8 place-items-center overflow-hidden rounded-full bg-primary text-sm font-semibold text-bg">
+                                    {userImage ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img src={userImage} alt={userName} className="h-full w-full object-cover" />
+                                    ) : (
+                                        userName.charAt(0).toUpperCase()
+                                    )}
+                                </span>
+                                <svg className={`h-4 w-4 transition-transform ${isProfileMenuOpen ? "rotate-180" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M6 9l6 6 6-6" />
+                                </svg>
+                            </button>
+
+                            {isProfileMenuOpen && (
+                                <div className="absolute right-0 top-[calc(100%+0.5rem)] z-50 w-56 rounded-2xl border border-accent/20 bg-card p-2 shadow-xl shadow-black/10">
+                                    <div className="mb-2 rounded-xl bg-bg/70 px-3 py-2">
+                                        <p className="text-sm font-semibold text-text">{userName}</p>
+                                        <p className="truncate text-xs text-text/60">{session?.user?.email}</p>
+                                    </div>
+
+                                    <Link
+                                        href="/profile"
+                                        onClick={() => setIsProfileMenuOpen(false)}
+                                        className="block rounded-xl px-3 py-2 text-sm text-text/90 hover:bg-accent/10"
+                                    >
+                                        Profile
+                                    </Link>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setIsProfileMenuOpen(false);
+                                            setIsLogoutModalOpen(true);
+                                        }}
+                                        className="mt-1 w-full rounded-xl px-3 py-2 text-left text-sm text-text/90 hover:bg-accent/10 cursor-pointer"
+                                    >
+                                        Log out
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     ) : (
-                        <Link href="/login" className="hidden md:block">
-                            <Button className="px-3 sm:px-4">Login</Button>
-                        </Link>
+                        <Button
+                            className="hidden px-3 sm:px-4 md:inline-flex cursor-pointer"
+                            onClick={() => setIsLoginModalOpen(true)}
+                        >
+                            Login
+                        </Button>
                     )}
 
                     <button
@@ -98,20 +186,51 @@ export default function Navbar({ isLoggedIn = false, mobileSidebarActive = "" })
 
                 {isMobileMenuOpen && (
                     <div id="mobile-nav-panel" className="mt-3 flex min-h-[calc(100dvh-10.5rem)] flex-col gap-3 overflow-y-auto border border-accent/20 bg-card p-3">
-                        <Link href={addItemHref} onClick={() => setIsMobileMenuOpen(false)}>
-                            <Button className="w-full justify-start">Add New Item</Button>
-                        </Link>
-
-                        {isLoggedIn ? (
-                            <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)}>
-                                <Button variant="secondary" className="w-full justify-start">
-                                    Profile
-                                </Button>
+                        {isAuthenticated ? (
+                            <Link href={addItemHref} onClick={() => setIsMobileMenuOpen(false)}>
+                                <Button className="w-full justify-start">Add New Item</Button>
                             </Link>
                         ) : (
-                            <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                                <Button className="w-full justify-start">Login</Button>
-                            </Link>
+                            <Button
+                                className="w-full justify-start"
+                                onClick={() => {
+                                    setIsMobileMenuOpen(false);
+                                    setIsLoginModalOpen(true);
+                                }}
+                            >
+                                Add New Item
+                            </Button>
+                        )}
+
+                        {isAuthenticated ? (
+                            <>
+                                <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)}>
+                                    <Button variant="secondary" className="w-full justify-start">
+                                        Profile
+                                    </Button>
+                                </Link>
+
+                                <Button
+                                    variant="ghost"
+                                    className="w-full justify-start"
+                                    onClick={() => {
+                                        setIsMobileMenuOpen(false);
+                                        setIsLogoutModalOpen(true);
+                                    }}
+                                >
+                                    Log out
+                                </Button>
+                            </>
+                        ) : (
+                            <Button
+                                className="w-full justify-start"
+                                onClick={() => {
+                                    setIsMobileMenuOpen(false);
+                                    setIsLoginModalOpen(true);
+                                }}
+                            >
+                                Login
+                            </Button>
                         )}
 
                         <ThemeSwitcher
@@ -130,6 +249,18 @@ export default function Navbar({ isLoggedIn = false, mobileSidebarActive = "" })
                     </div>
                 )}
             </div>
+
+            <GoogleAuthModal
+                open={isLoginModalOpen}
+                onClose={() => setIsLoginModalOpen(false)}
+                callbackUrl={isAuthenticated ? "/add-item" : "/"}
+            />
+
+            <LogoutConfirmModal
+                open={isLogoutModalOpen}
+                onClose={() => setIsLogoutModalOpen(false)}
+                onConfirm={() => signOut({ callbackUrl: "/" })}
+            />
         </header>
     );
 }

@@ -49,6 +49,8 @@ export const authOptions = {
       }
 
       session.user.id = dbUser._id.toString();
+  session.user.name = dbUser.name || session.user.name;
+  session.user.email = dbUser.email || session.user.email;
       session.user.phone = dbUser.phone || "";
       session.user.isProfileComplete = Boolean(dbUser.isProfileComplete);
       session.user.profileImage = dbUser.profileImage;

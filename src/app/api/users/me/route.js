@@ -1,11 +1,42 @@
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 
 const PHONE_REGEX = /^\+?[0-9]{7,15}$/;
 const PINCODE_REGEX = /^[0-9]{6}$/;
+
+export async function GET() {
+	const session = await getServerSession(authOptions);
+
+	if (!session?.user?.email) {
+		return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+	}
+
+	await connectDB();
+
+	const user = await User.findOne({ email: session.user.email });
+
+	if (!user) {
+		return NextResponse.json({ error: "User not found" }, { status: 404 });
+	}
+
+	return NextResponse.json({
+		user: {
+			id: user._id,
+			name: user.name,
+			email: user.email,
+			phone: user.phone || "",
+			profileImage: user.profileImage || "",
+			address: user.address || { city: "", state: "", pincode: "" },
+			isVerified: Boolean(user.isVerified),
+			isProfileComplete: Boolean(user.isProfileComplete),
+			createdAt: user.createdAt,
+			updatedAt: user.updatedAt,
+		},
+	});
+}
 
 export async function PATCH(req) {
 	const session = await getServerSession(authOptions);
@@ -67,10 +98,15 @@ export async function PATCH(req) {
 		message: "Profile updated",
 		user: {
 			id: user._id,
+			name: user.name,
 			email: user.email,
 			phone: user.phone,
+			profileImage: user.profileImage || "",
 			address: user.address,
 			isProfileComplete: user.isProfileComplete,
+			isVerified: Boolean(user.isVerified),
+			createdAt: user.createdAt,
+			updatedAt: user.updatedAt,
 		},
 	});
 }
