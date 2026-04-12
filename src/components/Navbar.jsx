@@ -46,6 +46,20 @@ export default function Navbar({ isLoggedIn = false, mobileSidebarActive = "" })
         };
     }, []);
 
+    useEffect(() => {
+        if (!isMobileMenuOpen) {
+            document.body.style.overflow = "";
+            return;
+        }
+
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+
+        return () => {
+            document.body.style.overflow = previousOverflow;
+        };
+    }, [isMobileMenuOpen]);
+
     const handleSearch = (event) => {
         event.preventDefault();
         router.push(`/items?search=${encodeURIComponent(query)}`);
@@ -88,12 +102,21 @@ export default function Navbar({ isLoggedIn = false, mobileSidebarActive = "" })
                             </Button>
                         </Link>
                     ) : (
-                        <Button
-                            className="hidden px-3 sm:px-4 md:inline-flex cursor-pointer"
-                            onClick={() => setIsLoginModalOpen(true)}
-                        >
-                            Add New Item
-                        </Button>
+                        <div className="hidden md:flex items-center gap-2 sm:gap-3">
+                            <Button
+                                className="px-3 sm:px-4 cursor-pointer"
+                                onClick={() => setIsLoginModalOpen(true)}
+                            >
+                                Add New Item
+                            </Button>
+
+                            <Button
+                                className="px-3 sm:px-4 cursor-pointer"
+                                onClick={() => setIsLoginModalOpen(true)}
+                            >
+                                Login
+                            </Button>
+                        </div>
                     )}
 
                     {isAuthenticated ? (
@@ -146,14 +169,7 @@ export default function Navbar({ isLoggedIn = false, mobileSidebarActive = "" })
                                 </div>
                             )}
                         </div>
-                    ) : (
-                        <Button
-                            className="hidden px-3 sm:px-4 md:inline-flex cursor-pointer"
-                            onClick={() => setIsLoginModalOpen(true)}
-                        >
-                            Login
-                        </Button>
-                    )}
+                    ) : null}
 
                     <button
                         type="button"
