@@ -244,7 +244,7 @@ export default function ItemsPageClient() {
 
     return (
         <div className="min-h-screen bg-bg text-text">
-            <Navbar isLoggedIn />
+            <Navbar />
 
             <main className="mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 sm:px-6 md:h-[calc(100vh-92px)] md:grid-cols-[320px_1fr] md:overflow-hidden lg:px-8">
                 <aside className="vyntra-scroll hidden h-fit space-y-5 rounded-2xl border border-accent/20 bg-card p-4 shadow-sm md:block md:h-full md:overflow-y-auto md:pr-2">
