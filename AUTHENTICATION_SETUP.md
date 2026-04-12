@@ -2,16 +2,16 @@
 
 ## Overview
 
-This guide explains the complete authentication flow for Vyntra, which uses Google Sign-in with NextAuth.js.
+This guide explains the complete authentication flow for Vyntra, which uses Google Sign-in with NextAuth.js and a popup-based login experience.
 
 ## Authentication Flow
 
-### 1. Login Page (`/login`)
-- **Route:** `src/app/login/page.js`
-- Users see the login page with Google Sign-in button
-- After clicking "Sign in with Google":
-  - If the user is **NEW**: Redirected to `/register` page
-  - If the user is **EXISTING**: Redirected to `/` (home page)
+### 1. Popup Sign-In Flow
+- **Entry point:** `src/components/GoogleAuthModal.jsx`
+- Users open the Google sign-in popup from the navbar or gated actions
+- After clicking "Continue with Google":
+  - If the user is **NEW**: A profile completion gate appears after sign-in
+  - If the user is **EXISTING**: Redirected to `/` or the original callback page
 
 ### 2. Google Sign-in Callback
 - **Handler:** `src/app/api/auth/[...nextauth]/route.js`
@@ -21,8 +21,8 @@ This guide explains the complete authentication flow for Vyntra, which uses Goog
   - If **EXISTING**: Retrieves user from database
   - Stores session data with profile completion status
 
-### 3. Register Page (`/register`)
-- **Route:** `src/app/register/page.js`
+### 3. Profile Completion Gate
+- **Component:** `src/components/ProfileCompletionGate.jsx`
 - **Visible to:** Only new users with incomplete profiles
 - **Fields:**
   - ✏️ **Username** (changeable) - How other users see you
@@ -128,39 +128,33 @@ The application will be available at `http://localhost:3000`
 ## User Journey Diagram
 
 ```
-┌─────────────────┐
-│   Visit /login  │
-└────────┬────────┘
-         │
-         ▼
 ┌─────────────────────────────┐
-│  Click "Sign in with Google"│
+│ Open Google sign-in popup   │
 └────────┬────────────────────┘
-         │
-         ▼
-     ┌─────────────────┐
-     │ Check Database  │
-     └────┬────────┬───┘
-          │        │
-     ┌────▼───┐ ┌─▼─────────┐
-     │New User│ │Existing   │
-     └────┬───┘ │User       │
-          │     └─┬─────────┘
-          ▼       ▼
-    ┌─────────────────┐
-    │  /register page │     /home page
-    │  - Username     │────────────
-    │  - Email (RO)   │
-    │  - Mobile       │
-    │  - Address      │
+      │
+      ▼
+  ┌─────────────────┐
+  │ Check Database  │
+  └────┬────────┬───┘
+    │        │
+  ┌────▼───┐ ┌─▼─────────┐
+  │New User│ │Existing   │
+  └────┬───┘ │User       │
+    │     └─┬─────────┘
+    ▼       ▼
+    ┌─────────────────┐     ┌─────────────────┐
+    │Profile Gate     │────▶ │   /home page    │
+    │ - Name          │     │ (Dashboard)     │
+    │ - Phone         │     └─────────────────┘
+    │ - Address       │
     └────────┬────────┘
-             │
-             ▼
+       │
+       ▼
     ┌─────────────────┐
     │Profile Complete │
     └────────┬────────┘
-             │
-             ▼
+       │
+       ▼
     ┌─────────────────┐
     │  /home page     │
     │ (Dashboard)     │
@@ -171,7 +165,7 @@ The application will be available at `http://localhost:3000`
 
 ### Navbar (`src/components/Navbar.jsx`)
 - Displays user info when authenticated
-- Shows login button when not authenticated
+- Shows a sign-in button that opens the popup when not authenticated
 - Logout functionality
 
 ### Styling
@@ -200,8 +194,6 @@ src/
 │   │   └── auth/
 │   │       ├── [...nextauth]/route.js    (Auth config)
 │   │       └── users/complete-profile/   (Profile API)
-│   ├── login/page.js                     (Login page)
-│   ├── register/page.js                  (Register page)
 │   ├── page.js                           (Home page)
 │   └── layout.js
 ├── components/

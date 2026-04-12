@@ -71,7 +71,7 @@ export default function ItemCard({ item }) {
                         <span className="ml-1 text-sm font-normal text-text/70">/day</span>
                     </p>
                     <Link href={`/items/${itemId}`}>
-                        <Button className="px-3 py-2 text-xs">Book Now</Button>
+                        <Button className="px-3 py-2 text-xs cursor-pointer">Book Now</Button>
                     </Link>
                 </div>
             </div>

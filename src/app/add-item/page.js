@@ -54,16 +54,13 @@ export default function AddItemAccessPage() {
                     <section className="mx-auto grid max-w-3xl gap-6 rounded-3xl border border-accent/20 bg-card p-6 shadow-sm lg:grid-cols-[1.1fr_0.9fr] lg:p-8">
                         <div>
                             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Add Listing</p>
-                            <h1 className="mt-2 text-3xl font-semibold text-text">Login to create a listing</h1>
+                            <h1 className="mt-2 text-3xl font-semibold text-text">Sign in to create a listing</h1>
                             <p className="mt-3 text-sm leading-6 text-text/70">
-                                Adding a new item is available only after sign in. Once you continue with Google, you can open this page again and submit the full listing form.
+                                Adding a new item is available only after sign in. Use the Google popup to continue, then return here to submit the full listing form.
                             </p>
 
                             <div className="mt-6 flex flex-wrap items-center gap-3">
                                 <Button onClick={() => setIsLoginModalOpen(true)}>Continue with Google</Button>
-                                <Link href="/login">
-                                    <Button variant="secondary">Open Login Page</Button>
-                                </Link>
                             </div>
                         </div>
 
