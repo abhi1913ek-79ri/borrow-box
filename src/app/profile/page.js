@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import Button from "@/components/Button";
 import Navbar from "@/components/Navbar";
+import ProfileSkeleton from "@/components/ProfileSkeleton";
 import Sidebar from "@/components/Sidebar";
 import { getMyProfile, updateMyProfile } from "@/services/profileService";
 
@@ -125,9 +126,7 @@ export default function ProfilePage() {
                 <Navbar isLoggedIn mobileSidebarActive="Profile" />
                 <main className="mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 sm:px-6 md:h-[calc(100vh-92px)] md:grid-cols-[auto_1fr] md:overflow-hidden lg:px-8">
                     <Sidebar active="Profile" />
-                    <section className="theme-card rounded-2xl border border-dashed border-accent/25 bg-card p-12 text-center">
-                        <h2 className="text-lg font-semibold text-text">Loading profile...</h2>
-                    </section>
+                    <ProfileSkeleton />
                 </main>
             </div>
         );

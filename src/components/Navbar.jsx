@@ -22,7 +22,7 @@ export default function Navbar({ isLoggedIn = false, mobileSidebarActive = "" })
     const isAuthenticated = isLoggedIn || status === "authenticated";
     const userName = session?.user?.name || "Profile";
     const userImage = session?.user?.profileImage || session?.user?.image || "";
-    const addItemHref = isAuthenticated ? "/add-item" : "/login";
+    const addItemHref = "/add-item";
 
     useEffect(() => {
         const handlePointerDown = (event) => {

@@ -122,7 +122,7 @@ export default function GoogleAuthModal({ open, onClose, callbackUrl = "/" }) {
                     <div className="mt-7 w-full">
                         <Button
                             type="button"
-                            className="w-full gap-3 rounded-2xl py-3.5 text-sm shadow-md shadow-primary/20"
+                            className="w-full gap-3 rounded-2xl py-3.5 text-sm shadow-md shadow-primary/20 cursor-pointer"
                             onClick={handleGoogleSignIn}
                             disabled={isSigningIn}
                             aria-busy={isSigningIn}
