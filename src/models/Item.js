@@ -4,8 +4,8 @@ const itemSchema = new mongoose.Schema({
   title: String,
   description: String,
   itemType: {
-    type: Types.Enumerator,
-    values: ["tool", "electronics", "vehicle", "furniture"],
+    type: String,
+    enum: ["tool", "electronics", "vehicle", "furniture"],
   },
   category: String,
   pricePerDay: Number,
