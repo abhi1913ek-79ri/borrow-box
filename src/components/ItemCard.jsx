@@ -2,7 +2,7 @@ import Link from "next/link";
 import Button from "./Button";
 
 export default function ItemCard({ item }) {
-    const itemId = item._id || item.id;
+    const itemId = item._id ? String(item._id) : item.id;
     const pricePerDay = item.pricePerDay ?? item.price ?? 0;
     const pricePerHour = item.pricePerHour ?? Math.max(1, Math.round(pricePerDay / 4));
     const depositAmount = item.depositAmount ?? 500;
@@ -14,11 +14,16 @@ export default function ItemCard({ item }) {
     const locationLabel = item.location?.city
         ? `${item.location.address || ""}${item.location.address ? ", " : ""}${item.location.city}`
         : item.location || "Location not specified";
+    const imageUrl = Array.isArray(item.images) && item.images.length > 0 ? item.images[0] : "";
 
     return (
         <article className="theme-card group overflow-hidden rounded-2xl border border-accent/20 bg-card shadow-md shadow-black/5 hover:-translate-y-1 hover:shadow-lg">
-            <div className="relative h-44 bg-linear-to-br from-primary via-primary/85 to-accent/85">
-                <div className="absolute inset-0 bg-black/10" />
+            <div className="relative h-44 overflow-hidden bg-linear-to-br from-primary via-primary/85 to-accent/85">
+                {imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={imageUrl} alt={item.title} className="h-full w-full object-cover transition duration-300 group-hover:scale-105" />
+                ) : null}
+                <div className="absolute inset-0 bg-black/20" />
                 <div className="absolute left-3 top-3 flex gap-2">
                     <span className="rounded-xl bg-bg/90 px-2 py-1 text-xs font-semibold text-text">
                         {category}

@@ -97,7 +97,7 @@ export default function Navbar({ isLoggedIn = false, mobileSidebarActive = "" })
                     <ThemeSwitcher className="hidden md:flex" />
                     {isAuthenticated ? (
                         <Link href={addItemHref} className="hidden md:block">
-                            <Button className="px-3 sm:px-4">
+                            <Button className="px-3 sm:px-4 cursor-pointer">
                                 Add New Item
                             </Button>
                         </Link>

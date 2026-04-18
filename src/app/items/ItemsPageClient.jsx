@@ -251,7 +251,7 @@ export default function ItemsPageClient() {
                     <div className="space-y-3">
                         <div>
                             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-text/70">Marketplace Filters</p>
-                            <h1 className="mt-1 text-2xl font-semibold text-text">Search products</h1>
+                            <h1 className="mt-1 text-2xl font-semibold text-text">Search items</h1>
                         </div>
 
                         <div className="rounded-2xl bg-primary/10 p-3 text-sm text-primary">
@@ -325,7 +325,7 @@ export default function ItemsPageClient() {
                         <div>
                             <p className="text-sm text-text/70">Search results</p>
                             <h2 className="text-xl font-semibold text-text">
-                                {isLoadingItems ? "Loading products..." : `${filteredItems.length} products matched`}
+                                {isLoadingItems ? "Loading items..." : `${filteredItems.length} items matched`}
                             </h2>
                         </div>
                         <div className="text-right text-sm text-text/70">
@@ -342,7 +342,7 @@ export default function ItemsPageClient() {
                         </div>
                     ) : isLoadingItems ? (
                         <div className="rounded-2xl border border-dashed border-accent/25 bg-card p-12 text-center">
-                            <h3 className="text-lg font-semibold text-text">Loading products</h3>
+                            <h3 className="text-lg font-semibold text-text">Loading items</h3>
                             <p className="mt-2 text-sm text-text/70">Fetching marketplace inventory...</p>
                         </div>
                     ) : filteredItems.length > 0 ? (
@@ -353,7 +353,7 @@ export default function ItemsPageClient() {
                         </div>
                     ) : (
                         <div className="rounded-2xl border border-dashed border-accent/25 bg-card p-12 text-center">
-                            <h3 className="text-lg font-semibold text-text">No products matched your filters</h3>
+                            <h3 className="text-lg font-semibold text-text">No items matched your filters</h3>
                             <p className="mt-2 text-sm text-text/70">Try a broader category, lower price, or different city.</p>
                         </div>
                     )}

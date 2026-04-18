@@ -34,8 +34,10 @@ const itemSchema = new mongoose.Schema({
     },
   },
   availability: {
-    isAvailable: Boolean,
-    default: true,
+    isAvailable: {
+      type: Boolean,
+      default: true,
+    },
   },
   owner: { type: mongoose.Schema.Types.ObjectId, ref: "User" }  ,
   rating: Number,

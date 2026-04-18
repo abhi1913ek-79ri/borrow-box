@@ -11,12 +11,6 @@ function isValidObjectId(id) {
 
 export async function GET(req, { params }) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const { id } = params;
 
     if (!isValidObjectId(id)) {

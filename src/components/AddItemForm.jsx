@@ -2,28 +2,69 @@
 
 import { useState } from "react";
 import Button from "./Button";
-import LocationPicker from "./LocationPicker";
+import OpenStreetMapLocationPicker from "./OpenStreetMapLocationPicker";
+import ImageUploadField from "./ImageUploadField";
 import { createItemListing, itemCatalogConfig } from "@/services/itemService";
 
 export default function AddItemForm() {
     const [latitude, setLatitude] = useState(28.7041);
     const [longitude, setLongitude] = useState(77.1025);
+    const [liveLocationStatus, setLiveLocationStatus] = useState("idle");
+    const [locationPermissionMessage, setLocationPermissionMessage] = useState("");
+    const [uploadedImages, setUploadedImages] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [submitMessage, setSubmitMessage] = useState("");
-    const [submitError, setSubmitError] = useState("");
+    const [statusMessage, setStatusMessage] = useState("");
+    const [statusType, setStatusType] = useState("success");
+    const [resetSignal, setResetSignal] = useState(0);
 
     const onLocationChange = (nextLat, nextLng) => {
         setLatitude(nextLat);
         setLongitude(nextLng);
     };
 
+    const requestLiveLocation = () => {
+        if (!navigator.geolocation) {
+            setLiveLocationStatus("unsupported");
+            setLocationPermissionMessage("Browser geolocation is not supported on this device.");
+            return;
+        }
+
+        setLiveLocationStatus("requesting");
+        setLocationPermissionMessage("Requesting your live location for the map picker...");
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                onLocationChange(
+                    Number(position.coords.latitude.toFixed(6)),
+                    Number(position.coords.longitude.toFixed(6))
+                );
+                setLiveLocationStatus("granted");
+                setLocationPermissionMessage("Live location enabled for this listing.");
+            },
+            (error) => {
+                setLiveLocationStatus("denied");
+                setLocationPermissionMessage(error.message || "Location permission was denied.");
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 60000,
+            }
+        );
+    };
+
     const handleSubmit = async (event) => {
         event.preventDefault();
-        const formData = new FormData(event.currentTarget);
-        const imageUrls = String(formData.get("images") || "")
-            .split(",")
-            .map((value) => value.trim())
-            .filter(Boolean);
+        const form = event.currentTarget;
+        
+        if (uploadedImages.length === 0) {
+            setStatusType("error");
+            setStatusMessage("Please upload at least one image.");
+            return;
+        }
+
+        const formData = new FormData(form);
+        const imageUrls = uploadedImages.map((img) => img.url);
 
         const values = {
             title: formData.get("title"),
@@ -43,14 +84,19 @@ export default function AddItemForm() {
 
         try {
             setIsSubmitting(true);
-            setSubmitError("");
-            setSubmitMessage("");
-            const created = await createItemListing(values);
-            setSubmitMessage(`Item prepared with ID ${created._id}. Backend can now replace the service with real API.`);
-            event.currentTarget.reset();
+            await createItemListing(values);
+            setStatusType("success");
+            setStatusMessage("Item added successfully.");
+            form.reset();
+            setUploadedImages([]);
+            setResetSignal((value) => value + 1);
             onLocationChange(28.7041, 77.1025);
-        } catch {
-            setSubmitError("Unable to prepare item payload right now.");
+            setLiveLocationStatus("idle");
+            setLocationPermissionMessage("");
+        } catch (error) {
+            console.error("Create item error:", error);
+            setStatusType("error");
+            setStatusMessage("Unable to add item. Please try again.");
         } finally {
             setIsSubmitting(false);
         }
@@ -62,7 +108,7 @@ export default function AddItemForm() {
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">Add Listing</p>
                 <h2 className="mt-2 text-2xl font-semibold text-text">Create a rental people can book right away</h2>
                 <p className="mt-2 max-w-2xl text-sm text-text/70">
-                    Fill in the required listing details, pricing, images, and map location. The item is prepared locally for the current backend placeholder flow.
+                    Fill in the required listing details, pricing, images, and map location. Your item will be published to the marketplace immediately.
                 </p>
             </div>
 
@@ -95,13 +141,17 @@ export default function AddItemForm() {
 
                         <label className="block">
                             <span className="mb-1 block text-sm font-medium text-text">Item Type</span>
-                            <input
+                            <select
                                 name="itemType"
-                                type="text"
                                 required
-                                placeholder="tool"
+                                defaultValue="tool"
                                 className="h-11 w-full rounded-xl border border-accent/20 bg-bg/80 px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
-                            />
+                            >
+                                <option value="tool">Tool</option>
+                                <option value="electronics">Electronics</option>
+                                <option value="vehicle">Vehicle</option>
+                                <option value="furniture">Furniture</option>
+                            </select>
                         </label>
 
                         <label className="block">
@@ -159,17 +209,7 @@ export default function AddItemForm() {
                             </label>
                         </div>
 
-                        <label className="block">
-                            <span className="mb-1 block text-sm font-medium text-text">Images</span>
-                            <textarea
-                                name="images"
-                                required
-                                rows={4}
-                                placeholder="https://example.com/image-1.jpg, https://example.com/image-2.jpg"
-                                className="w-full rounded-xl border border-accent/20 bg-bg/80 px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
-                            />
-                            <span className="mt-1 block text-xs text-text/55">Paste one or more image URLs separated by commas.</span>
-                        </label>
+                        <ImageUploadField onImagesChange={setUploadedImages} maxImages={5} resetSignal={resetSignal} />
 
                         <label className="flex items-center gap-2 rounded-xl border border-accent/15 bg-bg/60 px-3 py-2">
                             <input name="isAvailable" type="checkbox" defaultChecked className="h-4 w-4 rounded border-accent/20 text-primary focus:ring-primary" />
@@ -231,7 +271,16 @@ export default function AddItemForm() {
 
                     <div className="space-y-4 rounded-2xl border border-accent/15 bg-bg/50 p-4">
                         <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-text/65">Map Picker</h3>
-                        <LocationPicker latitude={latitude} longitude={longitude} onChange={onLocationChange} />
+                        <OpenStreetMapLocationPicker
+                            latitude={latitude}
+                            longitude={longitude}
+                            onChange={onLocationChange}
+                            onUseLiveLocation={requestLiveLocation}
+                            liveLocationStatus={liveLocationStatus}
+                        />
+                        <p className="text-xs text-text/70">
+                            {locationPermissionMessage || "Click the map to choose a location or use your live position."}
+                        </p>
                     </div>
                 </div>
 
@@ -240,24 +289,28 @@ export default function AddItemForm() {
                     <p className="mt-1 text-text/70">owner, rating, totalReviews, createdAt, updatedAt</p>
                 </div>
 
-                {submitError && (
-                    <div className="sm:col-span-2 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-600">
-                        {submitError}
-                    </div>
-                )}
-
-                {submitMessage && (
-                    <div className="sm:col-span-2 rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-                        {submitMessage}
-                    </div>
-                )}
-
                 <div className="flex justify-end">
                     <Button type="submit" className="px-6" disabled={isSubmitting}>
                         {isSubmitting ? "Preparing..." : "Publish Item"}
                     </Button>
                 </div>
+
             </form>
+
+            {statusMessage && (
+                <div
+                    className={`pointer-events-none fixed top-6 left-1/2 z-50 w-[min(92vw,560px)] -translate-x-1/2 rounded-2xl px-4 py-3 text-sm shadow-lg shadow-black/10 ${
+                        statusType === "success"
+                            ? "border border-emerald-200 bg-emerald-50 text-emerald-800"
+                            : "border border-rose-200 bg-rose-50 text-rose-800"
+                    }`}
+                    role="status"
+                    aria-live="polite"
+                >
+                    {statusMessage}
+                </div>
+            )}
+
         </section>
     );
 }
