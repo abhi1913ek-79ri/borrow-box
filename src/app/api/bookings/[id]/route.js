@@ -4,9 +4,22 @@ import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import Booking from "@/models/Booking";
+import Item from "@/models/Item";
 
-function isValidObjectId(id) {
-  return mongoose.Types.ObjectId.isValid(id);
+function normalizeBookingId(id) {
+  return typeof id === "string" ? id.trim() : "";
+}
+
+async function findBookingByIdOrKey(id) {
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    const bookingByObjectId = await Booking.findById(id);
+
+    if (bookingByObjectId) {
+      return bookingByObjectId;
+    }
+  }
+
+  return Booking.findOne({ _id: id });
 }
 
 export async function PUT(req, { params }) {
@@ -17,15 +30,16 @@ export async function PUT(req, { params }) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id } = params;
+    const resolvedParams = await params;
+    const id = normalizeBookingId(resolvedParams?.id);
 
-    if (!isValidObjectId(id)) {
+    if (!id) {
       return NextResponse.json({ error: "Invalid booking id" }, { status: 400 });
     }
 
     await connectDB();
 
-    const booking = await Booking.findById(id);
+    const booking = await findBookingByIdOrKey(id);
 
     if (!booking) {
       return NextResponse.json({ error: "Booking not found" }, { status: 404 });
@@ -33,19 +47,42 @@ export async function PUT(req, { params }) {
 
     if (String(booking.renter) !== String(session.user.id)) {
       return NextResponse.json(
-        { error: "Only the renter can remove this booking" },
+        { error: "Only the renter can cancel this booking" },
         { status: 403 }
       );
     }
 
-    await Booking.findByIdAndDelete(id);
+    if (booking.bookingStatus === "completed") {
+      return NextResponse.json(
+        { error: "Completed bookings cannot be cancelled" },
+        { status: 409 }
+      );
+    }
+
+    const item = booking.item ? await Item.findById(booking.item) : null;
+
+    await Booking.findByIdAndUpdate(booking._id, {
+      $set: {
+        bookingStatus: "cancelled",
+        updatedAt: new Date(),
+      },
+    });
+
+    if (item) {
+      await Item.findByIdAndUpdate(item._id, {
+        $set: {
+          "availability.isAvailable": true,
+          updatedAt: new Date(),
+        },
+      });
+    }
 
     return NextResponse.json(
-      { success: true, message: "Booking removed successfully" },
+      { success: true, message: "Booking cancelled successfully" },
       { status: 200 }
     );
   } catch (error) {
-    console.error("Remove booking error:", error);
+    console.error("Cancel booking error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

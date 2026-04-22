@@ -72,6 +72,10 @@ export async function POST(req) {
       return NextResponse.json({ error: "Item not found" }, { status: 404 });
     }
 
+    if (item.availability?.isAvailable === false) {
+      return NextResponse.json({ error: "Item is out of stock" }, { status: 409 });
+    }
+
     const totalPrice = Number(item.pricePerDay || 0) * totalDays;
 
     const booking = await Booking.create({
@@ -87,6 +91,26 @@ export async function POST(req) {
       createdAt: new Date(),
       updatedAt: new Date(),
     });
+
+    const inventoryUpdate = await Item.findByIdAndUpdate(
+      item._id,
+      {
+        $set: {
+          "availability.isAvailable": false,
+          updatedAt: new Date(),
+        },
+      },
+      { new: true }
+    );
+
+    if (!inventoryUpdate) {
+      await Booking.findByIdAndDelete(booking._id);
+
+      return NextResponse.json(
+        { error: "Unable to update item availability" },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json(
       {

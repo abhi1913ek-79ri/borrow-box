@@ -15,7 +15,12 @@ function getInclusiveDayCount(startDate, endDate) {
     return Math.floor((endUtc - startUtc) / oneDayMs) + 1;
 }
 
-export default function BookingWidget({ itemId, dailyPrice = 64, depositAmount = 500 }) {
+export default function BookingWidget({
+    itemId,
+    dailyPrice = 64,
+    depositAmount = 500,
+    isAlreadyBooked = false,
+}) {
     const today = useMemo(() => new Date(), []);
     const defaultStartDate = toIsoDate(today);
     const defaultEndDate = toIsoDate(new Date(today.getTime() + 24 * 60 * 60 * 1000));
@@ -39,8 +44,15 @@ export default function BookingWidget({ itemId, dailyPrice = 64, depositAmount =
 
     const totalPrice = dailyPrice * dayCount;
     const payableNow = totalPrice + depositAmount;
+    const isBookingDisabled = isSubmitting || isAlreadyBooked;
 
     const handleConfirmBooking = async () => {
+        if (isAlreadyBooked) {
+            setStatusType("error");
+            setStatusMessage("You have already booked this item.");
+            return;
+        }
+
         if (!itemId) {
             setStatusType("error");
             setStatusMessage("Unable to book this item right now.");
@@ -122,8 +134,12 @@ export default function BookingWidget({ itemId, dailyPrice = 64, depositAmount =
                 </div>
             </div>
 
-            <Button className="mt-5 w-full" onClick={handleConfirmBooking} disabled={isSubmitting}>
-                {isSubmitting ? "Confirming..." : "Confirm Booking"}
+            <Button
+                className="mt-5 w-full cursor-pointer"
+                onClick={handleConfirmBooking}
+                disabled={isBookingDisabled}
+            >
+                {isAlreadyBooked ? "Booked" : isSubmitting ? "Confirming..." : "Confirm Booking"}
             </Button>
 
             {statusMessage && (

@@ -290,7 +290,7 @@ export default function AddItemForm() {
                 </div>
 
                 <div className="flex justify-end">
-                    <Button type="submit" className="px-6" disabled={isSubmitting}>
+                    <Button type="submit" className="px-6 cursor-pointer" disabled={isSubmitting}>
                         {isSubmitting ? "Preparing..." : "Publish Item"}
                     </Button>
                 </div>

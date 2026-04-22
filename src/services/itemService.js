@@ -53,6 +53,29 @@ export async function getMarketplaceItems() {
     return data.items || [];
 }
 
+export async function getMyItems() {
+    const response = await fetch("/api/items/my-items", {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        cache: "no-store",
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to load your items");
+    }
+
+    const data = await response.json();
+
+    if (!data.success) {
+        throw new Error(data.error || "Failed to load your items");
+    }
+
+    return data.items || [];
+}
+
 export function filterMarketplaceItems(items, filters) {
     const {
         search = "",
@@ -134,4 +157,36 @@ export async function createItemListing(formValues) {
         console.error("Create item listing error:", error);
         throw error;
     }
+}
+
+export async function deleteItemListing(itemId) {
+    if (!itemId) {
+        throw new Error("Invalid item id");
+    }
+
+    const response = await fetch(`/api/items/${itemId}`, {
+        method: "DELETE",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        cache: "no-store",
+    });
+
+    let data = {};
+
+    try {
+        data = await response.json();
+    } catch {
+        data = {};
+    }
+
+    if (!response.ok) {
+        throw new Error(data.error || "Failed to delete item");
+    }
+
+    if (!data.success) {
+        throw new Error(data.error || "Failed to delete item");
+    }
+
+    return data;
 }

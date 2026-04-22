@@ -1,11 +1,16 @@
 import { notFound } from "next/navigation";
+import { getServerSession } from "next-auth";
 import BookingWidget from "@/components/BookingWidget";
 import Navbar from "@/components/Navbar";
 import { connectDB } from "@/lib/db";
+import { authOptions } from "@/lib/auth";
+import Booking from "@/models/Booking";
 import Item from "@/models/Item";
 
 export default async function ItemDetailPage({ params }) {
     await connectDB();
+
+    const session = await getServerSession(authOptions);
 
     const { id } = await params;
     const item = await Item.findById(id).populate("owner", "name").lean();
@@ -13,6 +18,16 @@ export default async function ItemDetailPage({ params }) {
     if (!item) {
         notFound();
     }
+
+    const alreadyBooked = session?.user?.id
+        ? Boolean(
+            await Booking.findOne({
+                item: item._id,
+                renter: session.user.id,
+                bookingStatus: { $in: ["pending", "confirmed", "completed"] },
+            }).lean(),
+        )
+        : false;
 
     const ownerName = typeof item.owner === "object" && item.owner?.name
         ? item.owner.name
@@ -174,6 +189,7 @@ export default async function ItemDetailPage({ params }) {
                             itemId={String(item._id)}
                             dailyPrice={item.pricePerDay || 0}
                             depositAmount={item.depositAmount || 0}
+                            isAlreadyBooked={alreadyBooked}
                         />
                     </div>
                 </div>

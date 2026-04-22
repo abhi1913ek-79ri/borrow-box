@@ -5,21 +5,34 @@ import { authOptions } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import Item from "@/models/Item";
 
-function isValidObjectId(id) {
-  return mongoose.Types.ObjectId.isValid(id);
+function normalizeItemId(id) {
+  return typeof id === "string" ? id.trim() : "";
+}
+
+async function findItemByIdOrKey(id) {
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    const itemByObjectId = await Item.findById(id);
+
+    if (itemByObjectId) {
+      return itemByObjectId;
+    }
+  }
+
+  return Item.findOne({ _id: id });
 }
 
 export async function GET(req, { params }) {
   try {
-    const { id } = params;
+    const resolvedParams = await params;
+    const id = normalizeItemId(resolvedParams?.id);
 
-    if (!isValidObjectId(id)) {
+    if (!id) {
       return NextResponse.json({ error: "Invalid item id" }, { status: 400 });
     }
 
     await connectDB();
 
-    const item = await Item.findById(id);
+    const item = await findItemByIdOrKey(id);
 
     if (!item) {
       return NextResponse.json({ error: "Item not found" }, { status: 404 });
@@ -43,15 +56,16 @@ export async function DELETE(req, { params }) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id } = params;
+    const resolvedParams = await params;
+    const id = normalizeItemId(resolvedParams?.id);
 
-    if (!isValidObjectId(id)) {
+    if (!id) {
       return NextResponse.json({ error: "Invalid item id" }, { status: 400 });
     }
 
     await connectDB();
 
-    const item = await Item.findById(id);
+    const item = await findItemByIdOrKey(id);
 
     if (!item) {
       return NextResponse.json({ error: "Item not found" }, { status: 404 });
@@ -64,7 +78,7 @@ export async function DELETE(req, { params }) {
       );
     }
 
-    await Item.findByIdAndDelete(id);
+    await Item.deleteOne({ _id: item._id });
 
     return NextResponse.json(
       { success: true, message: "Item deleted successfully" },
