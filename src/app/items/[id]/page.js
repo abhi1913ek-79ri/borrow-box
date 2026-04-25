@@ -19,15 +19,16 @@ export default async function ItemDetailPage({ params }) {
         notFound();
     }
 
-    const alreadyBooked = session?.user?.id
-        ? Boolean(
-            await Booking.findOne({
-                item: item._id,
-                renter: session.user.id,
-                bookingStatus: { $in: ["pending", "confirmed", "completed"] },
-            }).lean(),
-        )
-        : false;
+    const currentBooking = session?.user?.id
+        ? await Booking.findOne({
+            item: item._id,
+            renter: session.user.id,
+            bookingStatus: { $in: ["pending", "confirmed", "completed"] },
+        }).lean()
+        : null;
+
+    const isOwnedByCurrentUser = session?.user?.id ? String(item.owner) === String(session.user.id) : false;
+    const canBook = !isOwnedByCurrentUser && (item.availability?.isAvailable !== false || Boolean(currentBooking));
 
     const ownerName = typeof item.owner === "object" && item.owner?.name
         ? item.owner.name
@@ -189,7 +190,9 @@ export default async function ItemDetailPage({ params }) {
                             itemId={String(item._id)}
                             dailyPrice={item.pricePerDay || 0}
                             depositAmount={item.depositAmount || 0}
-                            isAlreadyBooked={alreadyBooked}
+                            currentBooking={currentBooking}
+                            isItemOutOfStock={!canBook && !currentBooking}
+                            isOwnedByCurrentUser={isOwnedByCurrentUser}
                         />
                     </div>
                 </div>

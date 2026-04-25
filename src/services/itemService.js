@@ -5,7 +5,7 @@ export const itemCatalogConfig = {
     cityList,
     priceRange: {
         min: 0,
-        max: 500,
+        max: 1000,
     },
     nearbyRadiusKm: 25,
 };

@@ -1,6 +1,9 @@
 import ItemCard from "./ItemCard";
 
-export default function FeaturedItemsGrid({ items }) {
+export default function FeaturedItemsGrid({ items, bookedItemIds = [], currentUserId = "" }) {
+    const bookedItemIdSet = new Set(bookedItemIds.map((id) => String(id)));
+    const normalizedCurrentUserId = String(currentUserId || "");
+
     return (
         <section className="space-y-4">
             <div className="flex items-center justify-between">
@@ -11,7 +14,12 @@ export default function FeaturedItemsGrid({ items }) {
             {items.length ? (
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {items.map((item) => (
-                        <ItemCard key={item._id || item.id || item.title} item={item} />
+                        <ItemCard
+                            key={item._id || item.id || item.title}
+                            item={item}
+                            isBookedByCurrentUser={bookedItemIdSet.has(String(item._id || item.id || ""))}
+                            isOwnedByCurrentUser={normalizedCurrentUserId && String(item.owner || "") === normalizedCurrentUserId}
+                        />
                     ))}
                 </div>
             ) : (

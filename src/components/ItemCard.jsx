@@ -1,7 +1,11 @@
 import Link from "next/link";
 import Button from "./Button";
 
-export default function ItemCard({ item }) {
+export default function ItemCard({
+    item,
+    isBookedByCurrentUser = false,
+    isOwnedByCurrentUser = false,
+}) {
     const itemId = item._id ? String(item._id) : item.id;
     const pricePerDay = item.pricePerDay ?? item.price ?? 0;
     const pricePerHour = item.pricePerHour ?? Math.max(1, Math.round(pricePerDay / 4));
@@ -9,6 +13,21 @@ export default function ItemCard({ item }) {
     const itemType = item.itemType ?? "rental";
     const category = item.category ?? "general";
     const isAvailable = item.availability?.isAvailable ?? true;
+    const isOutOfStock = !isAvailable && !isBookedByCurrentUser && !isOwnedByCurrentUser;
+    const cardStatusLabel = isOwnedByCurrentUser
+        ? "Your item"
+        : isBookedByCurrentUser
+            ? "Booked"
+            : isOutOfStock
+                ? "Out of stock"
+                : "Available";
+    const cardStatusClassName = isBookedByCurrentUser
+        ? "bg-indigo-500 text-white"
+        : isOwnedByCurrentUser
+            ? "bg-fuchsia-500 text-white"
+            : isOutOfStock
+            ? "bg-slate-500 text-white"
+            : "bg-emerald-500 text-white";
     const rating = item.rating ?? 4.8;
     const totalReviews = item.totalReviews ?? 0;
     const locationLabel = item.location?.city
@@ -28,13 +47,8 @@ export default function ItemCard({ item }) {
                     <span className="rounded-xl bg-bg/90 px-2 py-1 text-xs font-semibold text-text">
                         {category}
                     </span>
-                    <span
-                        className={`rounded-xl px-2 py-1 text-xs font-semibold ${isAvailable
-                            ? "bg-emerald-500 text-white"
-                            : "bg-rose-500 text-white"
-                            }`}
-                    >
-                        {isAvailable ? "Available" : "Booked"}
+                    <span className={`rounded-xl px-2 py-1 text-xs font-semibold ${cardStatusClassName}`}>
+                        {cardStatusLabel}
                     </span>
                 </div>
                 <div className="absolute bottom-3 left-3 rounded-xl bg-bg/90 px-2 py-1 text-xs font-semibold text-text">
@@ -75,9 +89,29 @@ export default function ItemCard({ item }) {
                         ${pricePerDay}
                         <span className="ml-1 text-sm font-normal text-text/70">/day</span>
                     </p>
-                    <Link href={`/items/${itemId}`}>
-                        <Button className="px-3 py-2 text-xs cursor-pointer">Book Now</Button>
-                    </Link>
+                    {isBookedByCurrentUser ? (
+                        <Link href={`/items/${itemId}`}>
+                            <Button className="cursor-pointer bg-indigo-600 px-3 py-2 text-xs text-white shadow-indigo-500/20 hover:bg-indigo-700">
+                                View
+                            </Button>
+                        </Link>
+                    ) : isOwnedByCurrentUser ? (
+                        <Link href={`/items/${itemId}`}>
+                            <Button className="cursor-pointer bg-fuchsia-600 px-3 py-2 text-xs text-white shadow-fuchsia-500/20 hover:bg-fuchsia-700">
+                                View
+                            </Button>
+                        </Link>
+                    ) : isOutOfStock ? (
+                        <Link href={`/items/${itemId}`}>
+                            <Button className="cursor-pointer bg-slate-500 px-3 py-2 text-xs text-white shadow-slate-500/20 hover:bg-slate-600">
+                                View
+                            </Button>
+                        </Link>
+                    ) : (
+                        <Link href={`/items/${itemId}`}>
+                            <Button className="cursor-pointer px-3 py-2 text-xs">Book Now</Button>
+                        </Link>
+                    )}
                 </div>
             </div>
         </article>

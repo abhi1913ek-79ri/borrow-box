@@ -1,10 +1,14 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useState } from "react";
 import Button from "./Button";
-import OpenStreetMapLocationPicker from "./OpenStreetMapLocationPicker";
 import ImageUploadField from "./ImageUploadField";
 import { createItemListing, itemCatalogConfig } from "@/services/itemService";
+
+const OpenStreetMapLocationPicker = dynamic(() => import("./OpenStreetMapLocationPicker"), {
+    ssr: false,
+});
 
 export default function AddItemForm() {
     const [latitude, setLatitude] = useState(28.7041);
@@ -235,13 +239,18 @@ export default function AddItemForm() {
 
                         <label className="block">
                             <span className="mb-1 block text-sm font-medium text-text">City</span>
-                            <input
+                            <select
                                 name="city"
-                                type="text"
                                 required
-                                placeholder="Delhi"
+                                defaultValue={itemCatalogConfig.cityList[0]}
                                 className="h-11 w-full rounded-xl border border-accent/20 bg-bg/80 px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
-                            />
+                            >
+                                {itemCatalogConfig.cityList.map((cityName) => (
+                                    <option key={cityName} value={cityName}>
+                                        {cityName}
+                                    </option>
+                                ))}
+                            </select>
                         </label>
 
                         <div className="grid grid-cols-2 gap-3">

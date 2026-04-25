@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Button from "./Button";
-import { createBooking } from "@/services/bookingService";
+import { cancelBooking, createBooking } from "@/services/bookingService";
 
 function toIsoDate(value) {
     return new Date(value).toISOString().slice(0, 10);
@@ -19,7 +19,9 @@ export default function BookingWidget({
     itemId,
     dailyPrice = 64,
     depositAmount = 500,
-    isAlreadyBooked = false,
+    currentBooking = null,
+    isItemOutOfStock = false,
+    isOwnedByCurrentUser = false,
 }) {
     const today = useMemo(() => new Date(), []);
     const defaultStartDate = toIsoDate(today);
@@ -28,8 +30,10 @@ export default function BookingWidget({
     const [startDate, setStartDate] = useState(defaultStartDate);
     const [endDate, setEndDate] = useState(defaultEndDate);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isCancelling, setIsCancelling] = useState(false);
     const [statusMessage, setStatusMessage] = useState("");
     const [statusType, setStatusType] = useState("success");
+    const [activeBooking, setActiveBooking] = useState(currentBooking);
 
     const dayCount = useMemo(() => {
         const parsedStart = new Date(`${startDate}T00:00:00Z`);
@@ -44,18 +48,33 @@ export default function BookingWidget({
 
     const totalPrice = dailyPrice * dayCount;
     const payableNow = totalPrice + depositAmount;
-    const isBookingDisabled = isSubmitting || isAlreadyBooked;
+    const hasActiveBooking = Boolean(activeBooking && activeBooking.bookingStatus !== "cancelled");
+    const showCancelAction = hasActiveBooking;
+    const showOutOfStock = isItemOutOfStock && !hasActiveBooking && !isOwnedByCurrentUser;
+    const isBookingDisabled = isSubmitting || showCancelAction || showOutOfStock;
 
     const handleConfirmBooking = async () => {
-        if (isAlreadyBooked) {
+        if (hasActiveBooking) {
             setStatusType("error");
             setStatusMessage("You have already booked this item.");
+            return;
+        }
+
+        if (isItemOutOfStock) {
+            setStatusType("error");
+            setStatusMessage("This item is out of stock.");
             return;
         }
 
         if (!itemId) {
             setStatusType("error");
             setStatusMessage("Unable to book this item right now.");
+            return;
+        }
+
+        if (isOwnedByCurrentUser) {
+            setStatusType("error");
+            setStatusMessage("You cannot book your own item.");
             return;
         }
 
@@ -71,11 +90,34 @@ export default function BookingWidget({
             await createBooking({ itemId, startDate, endDate });
             setStatusType("success");
             setStatusMessage("Booking confirmed successfully.");
+            setActiveBooking({ bookingStatus: "confirmed" });
         } catch (error) {
             setStatusType("error");
             setStatusMessage(error.message || "Unable to confirm booking.");
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const handleCancelBooking = async () => {
+        if (!activeBooking?._id) {
+            setStatusType("error");
+            setStatusMessage("Unable to cancel this booking right now.");
+            return;
+        }
+
+        try {
+            setIsCancelling(true);
+            setStatusMessage("");
+            await cancelBooking(activeBooking._id);
+            setStatusType("success");
+            setStatusMessage("Booking cancelled successfully.");
+            setActiveBooking(null);
+        } catch (error) {
+            setStatusType("error");
+            setStatusMessage(error.message || "Unable to cancel booking.");
+        } finally {
+            setIsCancelling(false);
         }
     };
 
@@ -134,13 +176,31 @@ export default function BookingWidget({
                 </div>
             </div>
 
-            <Button
-                className="mt-5 w-full cursor-pointer"
-                onClick={handleConfirmBooking}
-                disabled={isBookingDisabled}
-            >
-                {isAlreadyBooked ? "Booked" : isSubmitting ? "Confirming..." : "Confirm Booking"}
-            </Button>
+            {isOwnedByCurrentUser ? (
+                <div className="mt-5 rounded-2xl border border-fuchsia-200 bg-fuchsia-50 px-4 py-3 text-sm text-fuchsia-800 dark:border-fuchsia-900/40 dark:bg-fuchsia-950/40 dark:text-fuchsia-200">
+                    This is your item. You can view the details, but you cannot book your own listing.
+                </div>
+            ) : showCancelAction ? (
+                <Button
+                    className="mt-5 w-full bg-rose-600 text-white hover:bg-rose-700"
+                    onClick={handleCancelBooking}
+                    disabled={isCancelling}
+                >
+                    {isCancelling ? "Cancelling..." : "Cancel Booking"}
+                </Button>
+            ) : showOutOfStock ? (
+                <Button className="mt-5 w-full bg-slate-500 text-white hover:bg-slate-600" disabled>
+                    Out of stock
+                </Button>
+            ) : (
+                <Button
+                    className="mt-5 w-full cursor-pointer"
+                    onClick={handleConfirmBooking}
+                    disabled={isBookingDisabled}
+                >
+                    {isSubmitting ? "Confirming..." : "Confirm Booking"}
+                </Button>
+            )}
 
             {statusMessage && (
                 <div

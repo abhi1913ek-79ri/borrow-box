@@ -4,15 +4,31 @@ import FeaturedItemsGrid from "@/components/FeaturedItemsGrid";
 import HeroSection from "@/components/HeroSection";
 import Loader from "@/components/Loader";
 import Navbar from "@/components/Navbar";
+import { getServerSession } from "next-auth";
 import { connectDB } from "@/lib/db";
+import { authOptions } from "@/lib/auth";
+import Booking from "@/models/Booking";
 import Item from "@/models/Item";
 
 async function FeaturedItemsSection() {
   await connectDB();
 
-  const featuredItems = await Item.find().sort({ createdAt: -1 }).limit(6).lean();
+  const session = await getServerSession(authOptions);
+  const [featuredItems, bookedItems] = await Promise.all([
+    Item.find().sort({ createdAt: -1 }).limit(6).lean(),
+    session?.user?.id
+      ? Booking.find({
+          renter: session.user.id,
+          bookingStatus: { $in: ["pending", "confirmed", "completed"] },
+        })
+          .select("item")
+          .lean()
+      : Promise.resolve([]),
+  ]);
 
-  return <FeaturedItemsGrid items={featuredItems} />;
+  const bookedItemIds = bookedItems.map((booking) => String(booking.item)).filter(Boolean);
+
+  return <FeaturedItemsGrid items={featuredItems} bookedItemIds={bookedItemIds} currentUserId={session?.user?.id || ""} />;
 }
 
 export default function Home() {

@@ -72,6 +72,13 @@ export async function POST(req) {
       return NextResponse.json({ error: "Item not found" }, { status: 404 });
     }
 
+    if (String(item.owner) === String(session.user.id)) {
+      return NextResponse.json(
+        { error: "You cannot book your own item" },
+        { status: 403 }
+      );
+    }
+
     if (item.availability?.isAvailable === false) {
       return NextResponse.json({ error: "Item is out of stock" }, { status: 409 });
     }
