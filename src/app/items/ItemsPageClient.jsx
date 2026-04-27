@@ -3,11 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Button from "@/components/Button";
 import ItemCard from "@/components/ItemCard";
 import Navbar from "@/components/Navbar";
-import { filterMarketplaceItems, getMarketplaceItems, itemCatalogConfig } from "@/services/itemService";
+import { getMyBookings } from "@/services/bookingService";
+import { filterMarketplaceItems, getMarketplaceItems, getDistanceKm, itemCatalogConfig } from "@/services/itemService";
 
 const OpenStreetMapLocationPicker = dynamic(() => import("@/components/OpenStreetMapLocationPicker"), {
     ssr: false,
@@ -26,7 +28,10 @@ const categoryLabels = {
 };
 
 export default function ItemsPageClient() {
+    const { data: session, status } = useSession();
     const searchParams = useSearchParams();
+    const router = useRouter();
+    const pathname = usePathname();
     const initialSearch = searchParams.get("search") || "";
     const initialCategory = searchParams.get("category") || "all";
     const categories = itemCatalogConfig.categories;
@@ -39,12 +44,14 @@ export default function ItemsPageClient() {
     const [city, setCity] = useState("all");
     const [latitude, setLatitude] = useState(22.5726);
     const [longitude, setLongitude] = useState(78.9629);
+    const [locationFilterEnabled, setLocationFilterEnabled] = useState(false);
     const [nearbyRadiusKm, setNearbyRadiusKm] = useState(itemCatalogConfig.nearbyRadiusKm);
     const [liveLocationStatus, setLiveLocationStatus] = useState("idle");
     const [locationPermissionMessage, setLocationPermissionMessage] = useState("");
     const [onlyAvailable, setOnlyAvailable] = useState(false);
     const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
     const [items, setItems] = useState([]);
+    const [bookedItemIds, setBookedItemIds] = useState([]);
     const [isLoadingItems, setIsLoadingItems] = useState(true);
     const [loadError, setLoadError] = useState("");
 
@@ -62,6 +69,7 @@ export default function ItemsPageClient() {
             (position) => {
                 setLatitude(Number(position.coords.latitude.toFixed(6)));
                 setLongitude(Number(position.coords.longitude.toFixed(6)));
+                setLocationFilterEnabled(true);
                 setLiveLocationStatus("granted");
                 setLocationPermissionMessage("Live location enabled. Nearby items are now filtered around your current position.");
             },
@@ -96,6 +104,29 @@ export default function ItemsPageClient() {
     }, []);
 
     useEffect(() => {
+        const loadBookedItems = async () => {
+            if (status !== "authenticated") {
+                setBookedItemIds([]);
+                return;
+            }
+
+            try {
+                const bookings = await getMyBookings();
+                setBookedItemIds(
+                    bookings
+                        .map((booking) => booking.itemId || booking.item?._id || booking.item)
+                        .filter(Boolean)
+                        .map(String)
+                );
+            } catch {
+                setBookedItemIds([]);
+            }
+        };
+
+        loadBookedItems();
+    }, [status]);
+
+    useEffect(() => {
         const nextSearch = searchParams.get("search") || "";
         const nextCategory = searchParams.get("category") || "all";
 
@@ -103,17 +134,61 @@ export default function ItemsPageClient() {
         setSelectedCategory(categories.includes(nextCategory) ? nextCategory : "all");
     }, [categories, searchParams]);
 
+    useEffect(() => {
+        const currentSearch = searchParams.get("search") || "";
+        const currentCategory = searchParams.get("category") || "all";
+        const nextParams = new URLSearchParams(searchParams.toString());
+
+        if (search) {
+            nextParams.set("search", search);
+        } else {
+            nextParams.delete("search");
+        }
+
+        if (selectedCategory !== "all") {
+            nextParams.set("category", selectedCategory);
+        } else {
+            nextParams.delete("category");
+        }
+
+        const nextSearch = nextParams.toString();
+        const currentQuery = searchParams.toString();
+
+        if (currentSearch === search && currentCategory === selectedCategory && nextSearch === currentQuery) {
+            return;
+        }
+
+        router.replace(nextSearch ? `${pathname}?${nextSearch}` : pathname, { scroll: false });
+    }, [pathname, router, search, searchParams, selectedCategory]);
+
     const filteredItems = useMemo(() => {
-        return filterMarketplaceItems(items, {
+        const nextItems = filterMarketplaceItems(items, {
             search,
             selectedCategory,
             maxPrice,
             city,
             onlyAvailable,
-            userLocation: { lat: latitude, lng: longitude },
+            userLocation: locationFilterEnabled ? { lat: latitude, lng: longitude } : null,
             nearbyRadiusKm,
         });
-    }, [city, items, latitude, longitude, maxPrice, nearbyRadiusKm, onlyAvailable, search, selectedCategory]);
+
+        if (!locationFilterEnabled) {
+            return nextItems;
+        }
+
+        return [...nextItems].sort((leftItem, rightItem) => {
+            const leftDistance = getDistanceKm(
+                { lat: latitude, lng: longitude },
+                leftItem.location?.coordinates
+            );
+            const rightDistance = getDistanceKm(
+                { lat: latitude, lng: longitude },
+                rightItem.location?.coordinates
+            );
+
+            return leftDistance - rightDistance;
+        });
+    }, [city, items, latitude, longitude, locationFilterEnabled, maxPrice, nearbyRadiusKm, onlyAvailable, search, selectedCategory]);
 
     const filtersContent = ({ showSearch = true } = {}) => (
         <div className="space-y-4">
@@ -195,6 +270,7 @@ export default function ItemsPageClient() {
                     latitude={latitude}
                     longitude={longitude}
                     onChange={(nextLat, nextLng) => {
+                        setLocationFilterEnabled(true);
                         setLatitude(nextLat);
                         setLongitude(nextLng);
                     }}
@@ -251,7 +327,7 @@ export default function ItemsPageClient() {
                     <div className="space-y-3">
                         <div>
                             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-text/70">Marketplace Filters</p>
-                            <h1 className="mt-1 text-2xl font-semibold text-text">Search products</h1>
+                            <h1 className="mt-1 text-2xl font-semibold text-text">Search items</h1>
                         </div>
 
                         <div className="rounded-2xl bg-primary/10 p-3 text-sm text-primary">
@@ -267,6 +343,11 @@ export default function ItemsPageClient() {
                         <Button variant="secondary" className="mt-3 w-full" onClick={requestLiveLocation}>
                             {liveLocationStatus === "requesting" ? "Requesting..." : "Use my live location"}
                         </Button>
+                        {!locationFilterEnabled && (
+                            <p className="mt-2 text-xs text-text/60">
+                                Nearby filtering is disabled until you allow location access or move the map picker.
+                            </p>
+                        )}
                     </div>
 
                     {filtersContent()}
@@ -314,6 +395,11 @@ export default function ItemsPageClient() {
                                     <Button variant="secondary" className="mt-3 w-full" onClick={requestLiveLocation}>
                                         {liveLocationStatus === "requesting" ? "Requesting..." : "Use my live location"}
                                     </Button>
+                                    {!locationFilterEnabled && (
+                                        <p className="mt-2 text-xs text-text/60">
+                                            Nearby filtering is disabled until you allow location access or move the map picker.
+                                        </p>
+                                    )}
                                 </div>
 
                                 {filtersContent({ showSearch: false })}
@@ -325,13 +411,16 @@ export default function ItemsPageClient() {
                         <div>
                             <p className="text-sm text-text/70">Search results</p>
                             <h2 className="text-xl font-semibold text-text">
-                                {isLoadingItems ? "Loading products..." : `${filteredItems.length} products matched`}
+                                {isLoadingItems ? "Loading items..." : `${filteredItems.length} items matched`}
                             </h2>
                         </div>
                         <div className="text-right text-sm text-text/70">
                             <p>Current search: {search || "All items"}</p>
-                            <p>Latitude: {latitude.toFixed(2)} | Longitude: {longitude.toFixed(2)}</p>
+                            <p>
+                                Nearby center: {latitude.toFixed(2)} | {longitude.toFixed(2)}
+                            </p>
                             <p>Nearby radius: {nearbyRadiusKm} km</p>
+                            <p>{locationFilterEnabled ? "Personalized nearby results enabled" : "Nearby personalization is off"}</p>
                         </div>
                     </div>
 
@@ -342,18 +431,23 @@ export default function ItemsPageClient() {
                         </div>
                     ) : isLoadingItems ? (
                         <div className="rounded-2xl border border-dashed border-accent/25 bg-card p-12 text-center">
-                            <h3 className="text-lg font-semibold text-text">Loading products</h3>
+                            <h3 className="text-lg font-semibold text-text">Loading items</h3>
                             <p className="mt-2 text-sm text-text/70">Fetching marketplace inventory...</p>
                         </div>
                     ) : filteredItems.length > 0 ? (
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                             {filteredItems.map((item) => (
-                                <ItemCard key={item._id} item={item} />
+                                        <ItemCard
+                                            key={item._id}
+                                            item={item}
+                                            isBookedByCurrentUser={bookedItemIds.includes(String(item._id))}
+                                    isOwnedByCurrentUser={Boolean(session?.user?.id && String(item.owner || "") === String(session.user.id))}
+                                        />
                             ))}
                         </div>
                     ) : (
                         <div className="rounded-2xl border border-dashed border-accent/25 bg-card p-12 text-center">
-                            <h3 className="text-lg font-semibold text-text">No products matched your filters</h3>
+                            <h3 className="text-lg font-semibold text-text">No items matched your filters</h3>
                             <p className="mt-2 text-sm text-text/70">Try a broader category, lower price, or different city.</p>
                         </div>
                     )}

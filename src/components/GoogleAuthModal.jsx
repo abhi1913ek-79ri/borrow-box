@@ -63,8 +63,10 @@ export default function GoogleAuthModal({ open, onClose, callbackUrl = "/" }) {
         setIsSigningIn(true);
 
         try {
+            sessionStorage.setItem("vyntra-auth-toast", "google-signin");
             await signIn("google", { callbackUrl });
         } catch {
+            sessionStorage.removeItem("vyntra-auth-toast");
             setIsSigningIn(false);
         }
     };

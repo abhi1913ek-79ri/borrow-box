@@ -1,15 +1,11 @@
-import { categories, cityList, mockItems } from "@/lib/mockItems";
-
-const NETWORK_DELAY_MS = 180;
-
-const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+import { categories, cityList } from "@/lib/mockItems";
 
 export const itemCatalogConfig = {
     categories,
     cityList,
     priceRange: {
         min: 0,
-        max: 500,
+        max: 1000,
     },
     nearbyRadiusKm: 25,
 };
@@ -35,9 +31,49 @@ export function getDistanceKm(origin, target) {
 }
 
 export async function getMarketplaceItems() {
-    // Backend integration point: replace with GET /api/items and return API payload.
-    await wait(NETWORK_DELAY_MS);
-    return [...mockItems];
+    const response = await fetch("/api/items", {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        cache: "no-store",
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to load items");
+    }
+
+    const data = await response.json();
+
+    if (!data.success) {
+        throw new Error(data.error || "Failed to load items");
+    }
+
+    return data.items || [];
+}
+
+export async function getMyItems() {
+    const response = await fetch("/api/items/my-items", {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        cache: "no-store",
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to load your items");
+    }
+
+    const data = await response.json();
+
+    if (!data.success) {
+        throw new Error(data.error || "Failed to load your items");
+    }
+
+    return data.items || [];
 }
 
 export function filterMarketplaceItems(items, filters) {
@@ -52,14 +88,14 @@ export function filterMarketplaceItems(items, filters) {
     } = filters;
 
     return items.filter((item) => {
-        const matchesSearch = [item.title, item.description, item.category, item.location.city, item.location.address]
+        const matchesSearch = [item.title, item.description, item.category, item.location?.city, item.location?.address]
             .join(" ")
             .toLowerCase()
             .includes(search.toLowerCase());
         const matchesCategory = selectedCategory === "all" || item.category === selectedCategory;
         const matchesPrice = item.pricePerDay <= maxPrice;
-        const matchesCity = city === "all" || item.location.city === city;
-        const matchesAvailability = !onlyAvailable || item.availability.isAvailable;
+        const matchesCity = city === "all" || item.location?.city === city;
+        const matchesAvailability = !onlyAvailable || item.availability?.isAvailable;
         const itemLocation = item.location?.coordinates;
         const matchesNearby = !userLocation || getDistanceKm(userLocation, itemLocation) <= nearbyRadiusKm;
 
@@ -96,16 +132,61 @@ export function buildCreateItemPayload(formValues) {
 export async function createItemListing(formValues) {
     const payload = buildCreateItemPayload(formValues);
 
-    // Backend integration point: replace with POST /api/items and pass payload.
-    await wait(NETWORK_DELAY_MS);
+    try {
+        const response = await fetch("/api/items", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+        });
 
-    return {
-        ...payload,
-        _id: `item-${Date.now()}`,
-        owner: "ui-owner",
-        rating: 0,
-        totalReviews: 0,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-    };
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || "Failed to create item");
+        }
+
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(data.error || "Failed to create item");
+        }
+
+        return data.item;
+    } catch (error) {
+        console.error("Create item listing error:", error);
+        throw error;
+    }
+}
+
+export async function deleteItemListing(itemId) {
+    if (!itemId) {
+        throw new Error("Invalid item id");
+    }
+
+    const response = await fetch(`/api/items/${itemId}`, {
+        method: "DELETE",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        cache: "no-store",
+    });
+
+    let data = {};
+
+    try {
+        data = await response.json();
+    } catch {
+        data = {};
+    }
+
+    if (!response.ok) {
+        throw new Error(data.error || "Failed to delete item");
+    }
+
+    if (!data.success) {
+        throw new Error(data.error || "Failed to delete item");
+    }
+
+    return data;
 }

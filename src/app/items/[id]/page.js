@@ -1,34 +1,43 @@
+import { notFound } from "next/navigation";
+import { getServerSession } from "next-auth";
 import BookingWidget from "@/components/BookingWidget";
 import Navbar from "@/components/Navbar";
+import { connectDB } from "@/lib/db";
+import { authOptions } from "@/lib/auth";
+import Booking from "@/models/Booking";
+import Item from "@/models/Item";
 
-const thumbs = ["A", "B", "C", "D"];
+export default async function ItemDetailPage({ params }) {
+    await connectDB();
 
-const item = {
-    _id: "itemId",
-    title: "Bosch Drill Machine",
-    description: "Heavy duty drill machine for home use",
-    itemType: "tool",
-    category: "power-tools",
-    pricePerDay: 100,
-    pricePerHour: 20,
-    depositAmount: 500,
-    location: {
-        address: "Karawal Nagar",
-        city: "Delhi",
-        coordinates: {
-            lat: 28.7041,
-            lng: 77.1025,
-        },
-    },
-    availability: {
-        isAvailable: true,
-    },
-    owner: "userId",
-    rating: 4.5,
-    totalReviews: 10,
-};
+    const session = await getServerSession(authOptions);
 
-export default function ItemDetailPage() {
+    const { id } = await params;
+    const item = await Item.findById(id).populate("owner", "name").lean();
+
+    if (!item) {
+        notFound();
+    }
+
+    const currentBooking = session?.user?.id
+        ? await Booking.findOne({
+            item: item._id,
+            renter: session.user.id,
+            bookingStatus: { $in: ["pending", "confirmed", "completed"] },
+        }).lean()
+        : null;
+
+    const isOwnedByCurrentUser = session?.user?.id ? String(item.owner) === String(session.user.id) : false;
+    const canBook = !isOwnedByCurrentUser && (item.availability?.isAvailable !== false || Boolean(currentBooking));
+
+    const ownerName = typeof item.owner === "object" && item.owner?.name
+        ? item.owner.name
+        : String(item.owner || "-");
+
+    const images = Array.isArray(item.images) ? item.images.filter(Boolean) : [];
+    const heroImage = images[0] || "";
+    const galleryImages = images.slice(1, 5);
+
     return (
         <div className="min-h-screen bg-bg text-text">
             <Navbar />
@@ -37,45 +46,60 @@ export default function ItemDetailPage() {
                 <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
                     <section className="space-y-4">
                         <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-primary via-primary/90 to-accent shadow-lg">
-                            <div className="grid min-h-80 gap-4 p-5 text-bg sm:min-h-104 sm:p-6">
-                                <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-bg/85">
+                            <div className="relative grid min-h-80 gap-4 p-5 text-bg sm:min-h-104 sm:p-6">
+                                {heroImage ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img
+                                        src={heroImage}
+                                        alt={item.title}
+                                        className="absolute inset-0 h-full w-full object-cover"
+                                    />
+                                ) : null}
+                                <div className="absolute inset-0 " />
+
+                                <div className="relative flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-bg/85">
                                     <span className="rounded-full bg-bg/15 px-3 py-1">{item.category}</span>
                                     <span className="rounded-full bg-bg/15 px-3 py-1">{item.itemType}</span>
-                                    <span className={`rounded-full px-3 py-1 ${item.availability.isAvailable ? "bg-emerald-400/20 text-emerald-100" : "bg-rose-400/20 text-rose-100"}`}>
-                                        {item.availability.isAvailable ? "Available" : "Not Available"}
+                                    <span className={`rounded-full px-3 py-1 ${item.availability?.isAvailable ? "bg-emerald-400/20 text-emerald-100" : "bg-rose-400/20 text-rose-100"}`}>
+                                        {item.availability?.isAvailable ? "Available" : "Not Available"}
                                     </span>
                                 </div>
 
-                                <div className="mt-auto max-w-2xl space-y-3">
+                                <div className="relative mt-auto max-w-2xl space-y-3">
                                     <h1 className="text-3xl font-semibold leading-tight sm:text-5xl">{item.title}</h1>
                                     <p className="text-sm text-bg/85 sm:text-base">{item.description}</p>
                                 </div>
 
-                                <div className="grid gap-3 sm:grid-cols-3">
+                                <div className="relative grid gap-3 sm:grid-cols-3">
                                     <div className="rounded-2xl bg-bg/15 p-3 backdrop-blur">
                                         <p className="text-xs text-bg/85">Deposit Amount</p>
-                                        <p className="text-lg font-semibold">${item.depositAmount}</p>
+                                        <p className="text-lg font-semibold">${item.depositAmount || 0}</p>
                                     </div>
                                     <div className="rounded-2xl bg-bg/15 p-3 backdrop-blur">
                                         <p className="text-xs text-bg/85">Price / Day</p>
-                                        <p className="text-lg font-semibold">${item.pricePerDay}</p>
+                                        <p className="text-lg font-semibold">${item.pricePerDay || 0}</p>
                                     </div>
                                     <div className="rounded-2xl bg-bg/15 p-3 backdrop-blur">
                                         <p className="text-xs text-bg/85">Price / Hour</p>
-                                        <p className="text-lg font-semibold">${item.pricePerHour}</p>
+                                        <p className="text-lg font-semibold">${item.pricePerHour || 0}</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         <div className="grid grid-cols-4 gap-3">
-                            {thumbs.map((thumb) => (
-                                <button
-                                    key={thumb}
-                                    className="grid h-20 place-items-center rounded-xl border border-accent/20 bg-card text-sm font-semibold text-text/70 hover:border-primary/35"
+                            {(galleryImages.length ? galleryImages : images.length ? [heroImage] : ["", "", "", ""]).map((thumb, index) => (
+                                <div
+                                    key={`${thumb || "thumb"}-${index}`}
+                                    className="grid h-20 place-items-center overflow-hidden rounded-xl border border-accent/20 bg-card text-sm font-semibold text-text/70 hover:border-primary/35"
                                 >
-                                    {thumb}
-                                </button>
+                                    {thumb ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img src={thumb} alt={`${item.title} ${index + 1}`} className="h-full w-full object-cover" />
+                                    ) : (
+                                        <span>{String.fromCharCode(65 + index)}</span>
+                                    )}
+                                </div>
                             ))}
                         </div>
 
@@ -84,21 +108,21 @@ export default function ItemDetailPage() {
                                 <div className="space-y-2">
                                     <div className="flex flex-wrap items-center gap-3">
                                         <h1 className="text-3xl font-semibold text-text">{item.title}</h1>
-                                        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${item.availability.isAvailable
+                                        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${item.availability?.isAvailable
                                             ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
                                             : "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300"
                                             }`}>
-                                            {item.availability.isAvailable ? "Available" : "Not Available"}
+                                            {item.availability?.isAvailable ? "Available" : "Not Available"}
                                         </span>
                                     </div>
                                     <p className="text-sm text-text/70">
-                                        {item.location.address}, {item.location.city}
+                                        {item.location?.address}, {item.location?.city}
                                     </p>
                                 </div>
 
                                 <div className="rounded-2xl bg-primary/10 px-4 py-3 text-right">
                                     <p className="text-xs uppercase tracking-wide text-primary">Deposit</p>
-                                    <p className="text-2xl font-semibold text-text">${item.depositAmount}</p>
+                                    <p className="text-2xl font-semibold text-text">${item.depositAmount || 0}</p>
                                 </div>
                             </div>
 
@@ -115,31 +139,31 @@ export default function ItemDetailPage() {
                                 </div>
                                 <div className="rounded-xl bg-bg/80 p-3">
                                     <p className="text-xs uppercase tracking-wide text-text/70">Price / Day</p>
-                                    <p className="mt-1 font-semibold text-text">${item.pricePerDay}</p>
+                                    <p className="mt-1 font-semibold text-text">${item.pricePerDay || 0}</p>
                                 </div>
                                 <div className="rounded-xl bg-bg/80 p-3">
                                     <p className="text-xs uppercase tracking-wide text-text/70">Price / Hour</p>
-                                    <p className="mt-1 font-semibold text-text">${item.pricePerHour}</p>
+                                    <p className="mt-1 font-semibold text-text">${item.pricePerHour || 0}</p>
                                 </div>
                             </div>
 
                             <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                                 <div className="rounded-xl bg-bg/80 p-3">
                                     <p className="text-xs uppercase tracking-wide text-text/70">Rating</p>
-                                    <p className="mt-1 font-semibold text-text">{item.rating} / 5</p>
+                                    <p className="mt-1 font-semibold text-text">{item.rating || 0} / 5</p>
                                 </div>
                                 <div className="rounded-xl bg-bg/80 p-3">
                                     <p className="text-xs uppercase tracking-wide text-text/70">Reviews</p>
-                                    <p className="mt-1 font-semibold text-text">{item.totalReviews}</p>
+                                    <p className="mt-1 font-semibold text-text">{item.totalReviews || 0}</p>
                                 </div>
                                 <div className="rounded-xl bg-bg/80 p-3">
                                     <p className="text-xs uppercase tracking-wide text-text/70">Owner</p>
-                                    <p className="mt-1 font-semibold text-text">{item.owner}</p>
+                                    <p className="mt-1 font-semibold text-text">{ownerName}</p>
                                 </div>
                                 <div className="rounded-xl bg-bg/80 p-3">
                                     <p className="text-xs uppercase tracking-wide text-text/70">Coordinates</p>
                                     <p className="mt-1 font-semibold text-text">
-                                        {item.location.coordinates.lat}, {item.location.coordinates.lng}
+                                        {item.location?.coordinates?.lat}, {item.location?.coordinates?.lng}
                                     </p>
                                 </div>
                             </div>
@@ -147,22 +171,29 @@ export default function ItemDetailPage() {
                             <div className="mt-5 grid gap-3 rounded-2xl border border-accent/20 bg-bg/80 p-4 sm:grid-cols-3">
                                 <div>
                                     <p className="text-xs uppercase tracking-wide text-text/70">Location Address</p>
-                                    <p className="mt-1 font-semibold text-text">{item.location.address}</p>
+                                    <p className="mt-1 font-semibold text-text">{item.location?.address}</p>
                                 </div>
                                 <div>
                                     <p className="text-xs uppercase tracking-wide text-text/70">City</p>
-                                    <p className="mt-1 font-semibold text-text">{item.location.city}</p>
+                                    <p className="mt-1 font-semibold text-text">{item.location?.city}</p>
                                 </div>
                                 <div>
                                     <p className="text-xs uppercase tracking-wide text-text/70">Owner / Listing</p>
-                                    <p className="mt-1 font-semibold text-text">{item.owner}</p>
+                                    <p className="mt-1 font-semibold text-text">{ownerName}</p>
                                 </div>
                             </div>
                         </div>
                     </section>
 
                     <div className="lg:pt-2">
-                        <BookingWidget dailyPrice={item.pricePerDay} depositAmount={item.depositAmount} />
+                        <BookingWidget
+                            itemId={String(item._id)}
+                            dailyPrice={item.pricePerDay || 0}
+                            depositAmount={item.depositAmount || 0}
+                            currentBooking={currentBooking}
+                            isItemOutOfStock={!canBook && !currentBooking}
+                            isOwnedByCurrentUser={isOwnedByCurrentUser}
+                        />
                     </div>
                 </div>
             </main>

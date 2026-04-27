@@ -6,8 +6,8 @@ import { useState } from "react";
 const menuItems = [
     { label: "Home", href: "/dashboard", icon: "home" },
     { label: "Browse Items", href: "/items", icon: "grid" },
-    { label: "My Items", href: "/dashboard", icon: "box" },
-    { label: "Bookings", href: "/dashboard", icon: "calendar" },
+    { label: "My Items", href: "/my-items", icon: "box" },
+    { label: "Bookings", href: "/bookings", icon: "calendar" },
     { label: "Profile", href: "/profile", icon: "user" },
 ];
 
