@@ -203,7 +203,7 @@ export default function BookingsPageClient() {
 
     const totalBookings = myBookings.length;
     const totalSpendings = myBookings.reduce(
-        (sum, booking) => sum + (booking.bookingStatus === "cancelled" ? 0 : Number(booking.totalPrice || 0)),
+        (sum, booking) => sum + (booking.paymentStatus === "completed" ? Number(booking.amountPayable || booking.totalPrice || 0) : 0),
         0
     );
 

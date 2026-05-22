@@ -2,7 +2,14 @@
 
 import { useMemo, useState } from "react";
 import Button from "./Button";
-import { cancelBooking, createBooking } from "@/services/bookingService";
+import { cancelBooking } from "@/services/bookingService";
+import {
+    createRazorpayBookingOrder,
+    loadRazorpayCheckout,
+    openRazorpayCheckout,
+    syncRazorpayBookingPayment,
+    verifyRazorpayBookingPayment,
+} from "@/services/paymentService";
 
 function toIsoDate(value) {
     return new Date(value).toISOString().slice(0, 10);
@@ -13,6 +20,10 @@ function getInclusiveDayCount(startDate, endDate) {
     const startUtc = Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth(), startDate.getUTCDate());
     const endUtc = Date.UTC(endDate.getUTCFullYear(), endDate.getUTCMonth(), endDate.getUTCDate());
     return Math.floor((endUtc - startUtc) / oneDayMs) + 1;
+}
+
+function formatCurrency(amount) {
+    return `Rs. ${Number(amount || 0).toLocaleString("en-IN")}`;
 }
 
 export default function BookingWidget({
@@ -84,16 +95,54 @@ export default function BookingWidget({
             return;
         }
 
+        let payment = null;
+
         try {
             setIsSubmitting(true);
             setStatusMessage("");
-            await createBooking({ itemId, startDate, endDate });
+            payment = await createRazorpayBookingOrder({ itemId, startDate, endDate });
+            await loadRazorpayCheckout();
+            setStatusMessage("Opening secure payment checkout...");
+
+            const razorpayResponse = await openRazorpayCheckout({
+                key: payment.keyId,
+                amount: payment.amount,
+                currency: payment.currency,
+                name: "Borrow Box",
+                description: payment.itemTitle,
+                order_id: payment.razorpayOrderId,
+                prefill: payment.prefill || {},
+                notes: {
+                    bookingId: payment.bookingId,
+                    itemId,
+                },
+                theme: {
+                    color: "#2563eb",
+                },
+            });
+
+            const booking = await verifyRazorpayBookingPayment({
+                bookingId: payment.bookingId,
+                ...razorpayResponse,
+            });
+
             setStatusType("success");
-            setStatusMessage("Booking confirmed successfully.");
-            setActiveBooking({ bookingStatus: "confirmed" });
+            setStatusMessage("Payment verified and booking confirmed successfully.");
+            setActiveBooking({ _id: booking._id, bookingStatus: "confirmed" });
         } catch (error) {
+            if (payment?.bookingId) {
+                const syncedBooking = await syncRazorpayBookingPayment({ bookingId: payment.bookingId });
+
+                if (syncedBooking?.bookingStatus === "confirmed") {
+                    setStatusType("success");
+                    setStatusMessage("Payment found in Razorpay and booking confirmed successfully.");
+                    setActiveBooking({ _id: syncedBooking._id, bookingStatus: "confirmed" });
+                    return;
+                }
+            }
+
             setStatusType("error");
-            setStatusMessage(error.message || "Unable to confirm booking.");
+            setStatusMessage(error.message || "Unable to complete payment.");
         } finally {
             setIsSubmitting(false);
         }
@@ -124,7 +173,7 @@ export default function BookingWidget({
     return (
         <aside className="theme-card rounded-2xl border border-accent/20 bg-card p-5 shadow-sm">
             <p className="text-xl font-semibold text-text">
-                ${dailyPrice}
+                {formatCurrency(dailyPrice)}
                 <span className="ml-1 text-sm font-normal text-text/70">per day</span>
             </p>
 
@@ -150,29 +199,29 @@ export default function BookingWidget({
             </div>
 
             <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                <div className="rounded-lg bg-bg/80 px-2 py-1 text-text/70">bookingStatus: confirmed</div>
-                <div className="rounded-lg bg-bg/80 px-2 py-1 text-text/70">paymentStatus: pending</div>
+                <div className="rounded-lg bg-bg/80 px-2 py-1 text-text/70">bookingStatus: after payment</div>
+                <div className="rounded-lg bg-bg/80 px-2 py-1 text-text/70">paymentStatus: verified</div>
             </div>
 
             <div className="mt-3 rounded-xl border border-dashed border-accent/25 p-2 text-xs text-text/70">
-                paymentId: razorpay_id_optional
+                Razorpay test checkout
             </div>
 
             <div className="mt-4 space-y-2 text-sm">
                 <div className="flex items-center justify-between text-text/70">
                     <span>
-                        ${dailyPrice} x {dayCount || 0} days
+                        {formatCurrency(dailyPrice)} x {dayCount || 0} days
                     </span>
-                    <span>${totalPrice || 0}</span>
+                    <span>{formatCurrency(totalPrice)}</span>
                 </div>
                 <div className="flex items-center justify-between text-text/70">
                     <span>Deposit Amount</span>
-                    <span>${depositAmount}</span>
+                    <span>{formatCurrency(depositAmount)}</span>
                 </div>
                 <div className="h-px bg-accent/20" />
                 <div className="flex items-center justify-between font-semibold text-text">
                     <span>Payable Now</span>
-                    <span>${payableNow || 0}</span>
+                    <span>{formatCurrency(payableNow)}</span>
                 </div>
             </div>
 
@@ -198,7 +247,7 @@ export default function BookingWidget({
                     onClick={handleConfirmBooking}
                     disabled={isBookingDisabled}
                 >
-                    {isSubmitting ? "Confirming..." : "Confirm Booking"}
+                    {isSubmitting ? "Processing..." : "Pay & Confirm Booking"}
                 </Button>
             )}
 
@@ -216,3 +265,4 @@ export default function BookingWidget({
         </aside>
     );
 }
+

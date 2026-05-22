@@ -68,7 +68,7 @@ export async function PUT(req, { params }) {
       },
     });
 
-    if (item) {
+    if (item && booking.bookingStatus !== "pending") {
       await Item.findByIdAndUpdate(item._id, {
         $set: {
           "availability.isAvailable": true,

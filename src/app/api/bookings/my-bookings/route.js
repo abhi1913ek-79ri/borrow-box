@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
+import { reconcilePendingRazorpayBookings } from "@/lib/payments/bookingConfirmation";
 import Booking from "@/models/Booking";
 
 function toIsoDate(value) {
@@ -18,6 +19,14 @@ export async function GET() {
 
     await connectDB();
 
+    const pendingRazorpayBookings = await Booking.find({
+      renter: session.user.id,
+      paymentStatus: "pending",
+      razorpayOrderId: { $exists: true, $ne: "" },
+    });
+
+    await reconcilePendingRazorpayBookings(pendingRazorpayBookings, session.user.id);
+
     const bookings = await Booking.find({ renter: session.user.id })
       .populate({ path: "item", select: "title images owner" })
       .populate({ path: "owner", select: "name" })
@@ -32,6 +41,9 @@ export async function GET() {
       startDate: toIsoDate(booking.startDate),
       endDate: toIsoDate(booking.endDate),
       totalPrice: Number(booking.totalPrice || 0),
+      depositAmount: Number(booking.depositAmount || 0),
+      amountPayable: Number(booking.amountPayable || booking.totalPrice || 0),
+      paymentStatus: booking.paymentStatus || "pending",
       bookingStatus: booking.bookingStatus || "pending",
       createdAt: booking.createdAt || booking.updatedAt || null,
     }));

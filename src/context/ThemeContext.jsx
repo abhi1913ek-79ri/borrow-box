@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 
 const THEMES = ["light", "dark", "glass", "sunset", "aurora", "neon"];
 
@@ -10,21 +10,34 @@ const ThemeContext = createContext({
     themes: THEMES,
 });
 
-export function ThemeProvider({ children }) {
-    const [theme, setThemeState] = useState(() => {
-        if (typeof window === "undefined") {
-            return "light";
-        }
+function applyTheme(theme) {
+    const html = document.documentElement;
+    html.setAttribute("data-theme", theme);
+    html.classList.toggle("dark", theme === "dark");
+    window.localStorage.setItem("theme", theme);
+}
 
-        const storedTheme = window.localStorage.getItem("theme");
-        return storedTheme && THEMES.includes(storedTheme) ? storedTheme : "light";
-    });
+export function ThemeProvider({ children }) {
+    const [theme, setThemeState] = useState("light");
+    const hasLoadedStoredTheme = useRef(false);
 
     useEffect(() => {
-        const html = document.documentElement;
-        html.setAttribute("data-theme", theme);
-        html.classList.toggle("dark", theme === "dark");
-        window.localStorage.setItem("theme", theme);
+        const storedTheme = window.localStorage.getItem("theme");
+        const nextTheme = storedTheme && THEMES.includes(storedTheme) ? storedTheme : "light";
+
+        window.requestAnimationFrame(() => {
+            hasLoadedStoredTheme.current = true;
+            applyTheme(nextTheme);
+            setThemeState(nextTheme);
+        });
+    }, []);
+
+    useEffect(() => {
+        if (!hasLoadedStoredTheme.current) {
+            return;
+        }
+
+        applyTheme(theme);
     }, [theme]);
 
     const setTheme = (nextTheme) => {

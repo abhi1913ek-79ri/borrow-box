@@ -19,7 +19,7 @@ async function FeaturedItemsSection() {
     session?.user?.id
       ? Booking.find({
           renter: session.user.id,
-          bookingStatus: { $in: ["pending", "confirmed", "completed"] },
+          bookingStatus: { $in: ["confirmed", "completed"] },
         })
           .select("item")
           .lean()
