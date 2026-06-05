@@ -25,8 +25,8 @@ export default function ProfilePage() {
     const [saveError, setSaveError] = useState("");
     const [formState, setFormState] = useState({
         name: "",
-        email: "",
         phone: "",
+        upiId: "",
         city: "",
         state: "",
         pincode: "",
@@ -40,8 +40,8 @@ export default function ProfilePage() {
             setProfile(result);
             setFormState({
                 name: result.name,
-                email: result.email,
                 phone: result.phone,
+                upiId: result.upiId,
                 city: result.address.city,
                 state: result.address.state,
                 pincode: result.address.pincode,
@@ -61,6 +61,13 @@ export default function ProfilePage() {
 
     const handleFieldChange = (event) => {
         const { name, value } = event.target;
+
+        if (name === "phone") {
+            const digitsOnly = value.replace(/\D/g, "").slice(0, 10);
+            setFormState((prev) => ({ ...prev, phone: digitsOnly }));
+            return;
+        }
+
         setFormState((prev) => ({ ...prev, [name]: value }));
     };
 
@@ -71,8 +78,8 @@ export default function ProfilePage() {
 
         setFormState({
             name: profile.name,
-            email: profile.email,
             phone: profile.phone,
+            upiId: profile.upiId,
             city: profile.address.city,
             state: profile.address.state,
             pincode: profile.address.pincode,
@@ -88,8 +95,8 @@ export default function ProfilePage() {
 
         setFormState({
             name: profile.name,
-            email: profile.email,
             phone: profile.phone,
+            upiId: profile.upiId,
             city: profile.address.city,
             state: profile.address.state,
             pincode: profile.address.pincode,
@@ -106,15 +113,15 @@ export default function ProfilePage() {
             setProfile(updatedProfile);
             setFormState({
                 name: updatedProfile.name,
-                email: updatedProfile.email,
                 phone: updatedProfile.phone,
+                upiId: updatedProfile.upiId,
                 city: updatedProfile.address.city,
                 state: updatedProfile.address.state,
                 pincode: updatedProfile.address.pincode,
             });
             setIsEditing(false);
-        } catch {
-            setSaveError("Unable to save profile changes.");
+        } catch (error) {
+            setSaveError(error instanceof Error ? error.message : "Unable to save profile changes.");
         } finally {
             setIsSaving(false);
         }
@@ -175,13 +182,13 @@ export default function ProfilePage() {
                                     <div className="pb-2">
                                         {isEditing ? (
                                             <div className="space-y-2">
-                                                <input
-                                                    name="name"
-                                                    value={formState.name}
-                                                    onChange={handleFieldChange}
-                                                    className="h-10 w-full rounded-xl border border-accent/20 bg-bg/80 px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
-                                                />
-                                            </div>
+                                                        <input
+                                                            name="name"
+                                                            value={formState.name}
+                                                            onChange={handleFieldChange}
+                                                            className="h-10 w-full rounded-xl border border-accent/20 bg-bg/80 px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
+                                                        />
+                                                    </div>
                                         ) : (
                                             <>
                                                 <h1 className="text-2xl font-semibold text-text">{profile.name}</h1>
@@ -208,20 +215,38 @@ export default function ProfilePage() {
                             <h2 className="text-lg font-semibold text-text">Personal Details</h2>
                             <div className="mt-4 space-y-3 text-sm">
                                 <div className="rounded-xl bg-bg/80 p-3">
-                                    <p className="text-text/70">User ID</p>
-                                    <p className="font-medium text-text">{profile._id}</p>
+                                    <p className="text-text/70">Email ID</p>
+                                    <p className="font-medium text-text">{profile.email}</p>
                                 </div>
                                 <div className="rounded-xl bg-bg/80 p-3">
                                     <p className="text-text/70">Phone</p>
                                     {isEditing ? (
                                         <input
                                             name="phone"
+                                            type="tel"
+                                            inputMode="numeric"
+                                            maxLength={10}
                                             value={formState.phone}
                                             onChange={handleFieldChange}
+                                            placeholder="9876543210"
                                             className="h-10 w-full rounded-xl border border-accent/20 bg-bg/80 px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
                                         />
                                     ) : (
                                         <p className="font-medium text-text">{profile.phone}</p>
+                                    )}
+                                </div>
+                                <div className="rounded-xl bg-bg/80 p-3">
+                                    <p className="text-text/70">UPI ID</p>
+                                    {isEditing ? (
+                                        <input
+                                            name="upiId"
+                                            value={formState.upiId}
+                                            onChange={handleFieldChange}
+                                            placeholder="name@bank"
+                                            className="h-10 w-full rounded-xl border border-accent/20 bg-bg/80 px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
+                                        />
+                                    ) : (
+                                        <p className="font-medium text-text">{profile.upiId || "Not set"}</p>
                                     )}
                                 </div>
                             </div>
@@ -274,7 +299,13 @@ export default function ProfilePage() {
                     </section>
 
                     <section className="theme-card rounded-2xl border border-accent/20 bg-card p-5 shadow-sm">
-                        <h2 className="text-lg font-semibold text-text">Audit Fields</h2>
+                        <div className="flex items-center justify-between gap-3">
+                            <h2 className="text-lg font-semibold text-text">Profile Controls</h2>
+                            {!isEditing ? (
+                                <Button onClick={handleStartEdit}>Edit Profile</Button>
+                            ) : null}
+                        </div>
+
                         {saveError && (
                             <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-600">{saveError}</p>
                         )}
@@ -289,18 +320,14 @@ export default function ProfilePage() {
                             </div>
                         </div>
 
-                        <div className="mt-5 flex justify-end gap-3">
-                            {isEditing ? (
-                                <>
-                                    <Button variant="secondary" onClick={handleCancel} disabled={isSaving}>Cancel</Button>
-                                    <Button onClick={handleSave} disabled={isSaving}>
-                                        {isSaving ? "Saving..." : "Save Profile"}
-                                    </Button>
-                                </>
-                            ) : (
-                                <Button onClick={handleStartEdit}>Edit Profile</Button>
-                            )}
-                        </div>
+                        {isEditing && (
+                            <div className="mt-5 flex justify-end gap-3">
+                                <Button variant="secondary" onClick={handleCancel} disabled={isSaving}>Cancel</Button>
+                                <Button onClick={handleSave} disabled={isSaving}>
+                                    {isSaving ? "Saving..." : "Save Profile"}
+                                </Button>
+                            </div>
+                        )}
                     </section>
                 </div>
             </main>

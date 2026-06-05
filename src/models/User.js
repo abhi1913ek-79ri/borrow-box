@@ -5,6 +5,7 @@ const userSchema = new mongoose.Schema(
     name: String,
     email: { type: String, unique: true },
     phone: String,
+    upiId: { type: String, default: "" },
     profileImage: String,
     isVerified: { type: Boolean, default: false },
     

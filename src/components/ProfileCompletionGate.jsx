@@ -9,10 +9,12 @@ import { useTheme } from "@/context/ThemeContext";
 
 const PHONE_REGEX = /^[0-9]{10}$/;
 const PINCODE_REGEX = /^[0-9]{6}$/;
+const UPI_REGEX = /^[a-zA-Z0-9._-]{2,}@[a-zA-Z]{2,}$/;
 
 const emptyFormState = {
     name: "",
     phone: "",
+    upiId: "",
     city: "",
     state: "",
     pincode: "",
@@ -39,8 +41,8 @@ export default function ProfileCompletionGate() {
         const previousOverflow = document.body.style.overflow;
         document.body.style.overflow = "hidden";
 
-        const phoneInput = dialogRef.current?.querySelector('input[name="phone"]');
-        phoneInput?.focus();
+        const firstInput = dialogRef.current?.querySelector('input[name="name"]');
+        firstInput?.focus();
 
         const handleKeyDown = (event) => {
             if (event.key !== "Tab") {
@@ -88,9 +90,10 @@ export default function ProfileCompletionGate() {
             ...prev,
             name: session?.user?.name || "",
             phone: session?.user?.phone || "",
+            upiId: session?.user?.upiId || "",
         }));
         setError("");
-    }, [session?.user?.email, session?.user?.name, session?.user?.phone, status]);
+    }, [session?.user?.email, session?.user?.name, session?.user?.phone, session?.user?.upiId, status]);
 
     if (!isGateOpen || typeof window === "undefined") {
         return null;
@@ -121,6 +124,7 @@ export default function ProfileCompletionGate() {
         event.preventDefault();
 
         const phone = formState.phone.trim();
+        const upiId = formState.upiId.trim();
         const name = formState.name.trim();
         const city = formState.city.trim();
         const state = formState.state.trim();
@@ -133,6 +137,11 @@ export default function ProfileCompletionGate() {
 
         if (!PHONE_REGEX.test(phone)) {
             setError("Please enter a valid 10-digit mobile number.");
+            return;
+        }
+
+        if (!UPI_REGEX.test(upiId)) {
+            setError("Please enter a valid UPI ID.");
             return;
         }
 
@@ -156,6 +165,7 @@ export default function ProfileCompletionGate() {
                 body: JSON.stringify({
                     name,
                     phone,
+                    upiId,
                     address: {
                         city,
                         state,
@@ -201,7 +211,7 @@ export default function ProfileCompletionGate() {
                             Complete your profile to continue
                         </h2>
                         <p className="mt-3 text-sm leading-6 text-text/70 sm:text-base">
-                            Add your phone number and address so you can keep using Vyntra without interruption.
+                            Add your phone number, UPI ID, and address so you can keep using Vyntra without interruption.
                         </p>
                     </div>
 
@@ -242,6 +252,18 @@ export default function ProfileCompletionGate() {
                                 value={formState.phone}
                                 onChange={handleChange}
                                 placeholder="9876543210"
+                                className="h-11 w-full rounded-2xl border border-accent/20 bg-bg/80 px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
+                            />
+                        </label>
+
+                        <label className="block">
+                            <span className="mb-1 block text-sm font-medium text-text">UPI ID</span>
+                            <input
+                                name="upiId"
+                                type="text"
+                                value={formState.upiId}
+                                onChange={handleChange}
+                                placeholder="name@bank"
                                 className="h-11 w-full rounded-2xl border border-accent/20 bg-bg/80 px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
                             />
                         </label>

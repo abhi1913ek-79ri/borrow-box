@@ -4,8 +4,9 @@ import { authOptions } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 
-const PHONE_REGEX = /^\+?[0-9]{7,15}$/;
+const PHONE_REGEX = /^[0-9]{10}$/;
 const PINCODE_REGEX = /^[0-9]{6}$/;
+const UPI_REGEX = /^[a-zA-Z0-9._-]{2,}@[a-zA-Z]{2,}$/;
 
 export async function GET() {
 	const session = await getServerSession(authOptions);
@@ -28,6 +29,7 @@ export async function GET() {
 			name: user.name,
 			email: user.email,
 			phone: user.phone || "",
+			upiId: user.upiId || "",
 			profileImage: user.profileImage || "",
 			address: user.address || { city: "", state: "", pincode: "" },
 			isVerified: Boolean(user.isVerified),
@@ -47,13 +49,22 @@ export async function PATCH(req) {
 
 	const body = await req.json();
 	const phone = String(body?.phone || "").trim();
-	const city = String(body?.city || "").trim();
-	const state = String(body?.state || "").trim();
-	const pincode = String(body?.pincode || "").trim();
+	const upiId = String(body?.upiId || "").trim();
+	const address = body?.address || {};
+	const city = String(body?.city || address.city || "").trim();
+	const state = String(body?.state || address.state || "").trim();
+	const pincode = String(body?.pincode || address.pincode || "").trim();
 
 	if (!PHONE_REGEX.test(phone)) {
 		return NextResponse.json(
 			{ error: "Please enter a valid mobile number." },
+			{ status: 400 },
+		);
+	}
+
+	if (!UPI_REGEX.test(upiId)) {
+		return NextResponse.json(
+			{ error: "Please enter a valid UPI ID." },
 			{ status: 400 },
 		);
 	}
@@ -79,6 +90,7 @@ export async function PATCH(req) {
 		{
 			$set: {
 				phone,
+				upiId,
 				address: {
 					city,
 					state,
@@ -101,6 +113,7 @@ export async function PATCH(req) {
 			name: user.name,
 			email: user.email,
 			phone: user.phone,
+			upiId: user.upiId || "",
 			profileImage: user.profileImage || "",
 			address: user.address,
 			isProfileComplete: user.isProfileComplete,
