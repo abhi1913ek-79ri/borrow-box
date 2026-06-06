@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 
 const PHONE_REGEX = /^[0-9]{10}$/;
+const UPI_REGEX = /^[a-zA-Z0-9._-]{2,}@[a-zA-Z]{2,}$/;
 
 export async function PATCH(req) {
   try {
@@ -18,10 +19,21 @@ export async function PATCH(req) {
 
     const body = await req.json();
     const { name, phone, address } = body;
+    const upiId = String(body?.upiId || "").trim();
 
     if (!PHONE_REGEX.test(String(phone || "").trim())) {
       return new Response(
         JSON.stringify({ error: "Please enter a valid 10-digit mobile number" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    if (!UPI_REGEX.test(upiId)) {
+      return new Response(
+        JSON.stringify({ error: "Please enter a valid UPI ID" }),
         {
           status: 400,
           headers: { "Content-Type": "application/json" },
@@ -44,14 +56,17 @@ export async function PATCH(req) {
     const user = await User.findOneAndUpdate(
       { email: session.user.email },
       {
-        name,
-        phone,
-        address: {
-          city: address.city,
-          state: address.state,
-          pincode: address.pincode,
+        $set: {
+          name,
+          phone,
+          upiId,
+          address: {
+            city: address.city,
+            state: address.state,
+            pincode: address.pincode,
+          },
+          isProfileComplete: true,
         },
-        isProfileComplete: true,
       },
       { new: true }
     );
@@ -63,7 +78,7 @@ export async function PATCH(req) {
       });
     }
 
-    return new Response(JSON.stringify({ success: true, user }), {
+    return new Response(JSON.stringify({ success: true, user: { ...user.toObject(), upiId: user.upiId || "" } }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });

@@ -3,8 +3,8 @@ export function buildProfileUpdatePayload(formValues) {
     // _id, password, isVerified, createdAt, updatedAt
     return {
         name: formValues.name?.trim() || "",
-        email: formValues.email?.trim() || "",
         phone: formValues.phone?.trim() || "",
+        upiId: formValues.upiId?.trim() || "",
         address: {
             city: formValues.city?.trim() || "",
             state: formValues.state?.trim() || "",

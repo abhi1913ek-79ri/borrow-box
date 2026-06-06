@@ -23,6 +23,7 @@ export const authOptions = {
           email: user.email,
           profileImage: user.image,
           isVerified: true,
+          upiId: "",
           isProfileComplete: false,
         });
         return true;
@@ -48,10 +49,11 @@ export const authOptions = {
         return session;
       }
 
-      session.user.id = dbUser._id.toString();
-  session.user.name = dbUser.name || session.user.name;
-  session.user.email = dbUser.email || session.user.email;
+        session.user.id = dbUser._id.toString();
+        session.user.name = dbUser.name || session.user.name;
+        session.user.email = dbUser.email || session.user.email;
       session.user.phone = dbUser.phone || "";
+        session.user.upiId = dbUser.upiId || "";
       session.user.isProfileComplete = Boolean(dbUser.isProfileComplete);
       session.user.profileImage = dbUser.profileImage;
 
