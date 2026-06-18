@@ -93,3 +93,67 @@ export async function cancelBooking(bookingId) {
 
 	return data;
 }
+
+export async function dispatchBooking(bookingId) {
+	if (!bookingId) {
+		throw new Error("Invalid booking id");
+	}
+
+	const response = await fetch(`/api/bookings/${bookingId}/dispatch`, {
+		method: "PATCH",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		cache: "no-store",
+	});
+
+	let data = {};
+
+	try {
+		data = await response.json();
+	} catch {
+		data = {};
+	}
+
+	if (!response.ok) {
+		throw new Error(data.error || "Unable to start delivery");
+	}
+
+	if (!data.success) {
+		throw new Error(data.error || "Unable to start delivery");
+	}
+
+	return data.booking;
+}
+
+export async function confirmBookingDelivery(bookingId) {
+	if (!bookingId) {
+		throw new Error("Invalid booking id");
+	}
+
+	const response = await fetch(`/api/bookings/${bookingId}/confirm-delivery`, {
+		method: "PATCH",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		cache: "no-store",
+	});
+
+	let data = {};
+
+	try {
+		data = await response.json();
+	} catch {
+		data = {};
+	}
+
+	if (!response.ok) {
+		throw new Error(data.error || "Unable to confirm delivery");
+	}
+
+	if (!data.success) {
+		throw new Error(data.error || "Unable to confirm delivery");
+	}
+
+	return data.booking;
+}

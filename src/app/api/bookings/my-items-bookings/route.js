@@ -45,6 +45,8 @@ export async function GET() {
       amountPayable: Number(booking.amountPayable || booking.totalPrice || 0),
       paymentStatus: booking.paymentStatus || "pending",
       bookingStatus: booking.bookingStatus || "pending",
+      actionTaken: ["owner_accepted", "owner_rejected", "in_transit", "delivered", "completed"].includes(booking.bookingStatus),
+      deliveredAt: booking.deliveredAt || null,
       createdAt: booking.createdAt || booking.updatedAt || null,
     }));
 

@@ -1,5 +1,8 @@
 import Booking from "@/models/Booking";
 import Item from "@/models/Item";
+import User from "@/models/User";
+import { sendEmail } from "@/lib/email";
+import { createNotification } from "@/lib/notifications";
 import { captureRazorpayPayment, fetchRazorpayOrderPayments } from "@/lib/payments/razorpay";
 
 function hasValue(value) {
@@ -20,6 +23,73 @@ async function normalizeSuccessfulPayment(payment) {
     paymentId: payment.id,
     amount: payment.amount,
     currency: payment.currency || "INR",
+  });
+}
+
+function formatBookingDate(date) {
+  if (!date) {
+    return "";
+  }
+
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(date));
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+async function sendOwnerBookingEmail({ ownerId, booking, itemTitle }) {
+  if (!ownerId) {
+    return;
+  }
+
+  const [owner, renter] = await Promise.all([
+    User.findById(ownerId).select("name email").lean(),
+    User.findById(booking.renter).select("name email").lean(),
+  ]);
+
+  if (!owner?.email) {
+    return;
+  }
+
+  const startDate = formatBookingDate(booking.startDate);
+  const endDate = formatBookingDate(booking.endDate);
+  const bookingDates = startDate && endDate ? `${startDate} to ${endDate}` : "the selected dates";
+  const renterName = renter?.name || "A renter";
+  const amount = Number(booking.amountPayable || booking.totalPrice || 0);
+  const amountLabel = amount > 0 ? `Rs. ${amount.toLocaleString("en-IN")}` : "the booking amount";
+  const ownerNameHtml = escapeHtml(owner.name || "there");
+  const renterNameHtml = escapeHtml(renterName);
+  const itemTitleHtml = escapeHtml(itemTitle);
+  const bookingDatesHtml = escapeHtml(bookingDates);
+  const amountLabelHtml = escapeHtml(amountLabel);
+
+  await sendEmail({
+    to: owner.email,
+    subject: `New booking for ${itemTitle}`,
+    text: [
+      `Hi ${owner.name || "there"},`,
+      "",
+      `${renterName} has successfully booked ${itemTitle} for ${bookingDates}.`,
+      `Amount paid: ${amountLabel}.`,
+      "",
+      "Please open Vyntra to accept or reject the booking request.",
+    ].join("\n"),
+    html: `
+      <p>Hi ${ownerNameHtml},</p>
+      <p><strong>${renterNameHtml}</strong> has successfully booked <strong>${itemTitleHtml}</strong> for ${bookingDatesHtml}.</p>
+      <p>Amount paid: <strong>${amountLabelHtml}</strong>.</p>
+      <p>Please open Vyntra to accept or reject the booking request.</p>
+    `,
   });
 }
 
@@ -45,11 +115,28 @@ export async function confirmRazorpayBookingPayment({
     return { ok: false, status: 404, error: "Booking not found" };
   }
 
-  if (booking.paymentStatus === "completed" && booking.bookingStatus === "confirmed") {
+  if (
+    booking.paymentStatus === "completed"
+    && ["paid", "owner_accepted", "in_transit", "delivered", "confirmed", "completed"].includes(booking.bookingStatus)
+  ) {
     return { ok: true, booking };
   }
 
   const paymentId = razorpayPaymentId || booking.razorpayPaymentId || booking.paymentId;
+  const item = await Item.findById(booking.item).select("title owner").lean();
+  const ownerId = booking.owner || item?.owner;
+  const itemTitle = item?.title || "your item";
+
+  if (ownerId) {
+    await createNotification({
+      userId: ownerId,
+      title: "New Booking Request",
+      message: `Your item ${itemTitle} has been booked, Start Your Delivery Process.`,
+      type: "booking",
+      bookingId: booking._id,
+    });
+  }
+
   const inventoryUpdate = await Item.findOneAndUpdate(
     {
       _id: booking.item,
@@ -70,7 +157,7 @@ export async function confirmRazorpayBookingPayment({
       {
         $set: {
           paymentStatus: "completed",
-          bookingStatus: "pending",
+          bookingStatus: "paid",
           paymentId,
           razorpayPaymentId: paymentId,
           updatedAt: new Date(),
@@ -92,7 +179,7 @@ export async function confirmRazorpayBookingPayment({
     {
       $set: {
         paymentStatus: "completed",
-        bookingStatus: "confirmed",
+        bookingStatus: "paid",
         paymentId,
         razorpayPaymentId: paymentId,
         updatedAt: new Date(),
@@ -100,6 +187,16 @@ export async function confirmRazorpayBookingPayment({
     },
     { new: true }
   );
+
+  try {
+    await sendOwnerBookingEmail({
+      ownerId,
+      booking: confirmedBooking,
+      itemTitle,
+    });
+  } catch (error) {
+    console.error("Send booking owner email error:", error);
+  }
 
   return { ok: true, booking: confirmedBooking };
 }

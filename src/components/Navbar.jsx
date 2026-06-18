@@ -9,6 +9,7 @@ import { signOut, useSession } from "next-auth/react";
 import { SidebarMenu } from "./Sidebar";
 import GoogleAuthModal from "./GoogleAuthModal";
 import LogoutConfirmModal from "./LogoutConfirmModal";
+import NotificationBell from "./NotificationBell";
 
 export default function Navbar({ isLoggedIn = false, mobileSidebarActive = "" }) {
     const router = useRouter();
@@ -95,6 +96,7 @@ export default function Navbar({ isLoggedIn = false, mobileSidebarActive = "" })
 
                 <div className="ml-auto flex items-center gap-2 sm:gap-3">
                     <ThemeSwitcher className="hidden md:flex" />
+                    {isAuthenticated ? <NotificationBell /> : null}
                     {isAuthenticated ? (
                         <Link href={addItemHref} className="hidden md:block">
                             <Button className="px-3 sm:px-4 cursor-pointer">

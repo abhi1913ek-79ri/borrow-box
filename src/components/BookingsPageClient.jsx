@@ -5,10 +5,15 @@ import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import Button from "@/components/Button";
 import CancelBookingConfirmModal from "@/components/CancelBookingConfirmModal";
-import { cancelBooking, getMyBookings } from "@/services/bookingService";
+import { cancelBooking, confirmBookingDelivery, getMyBookings } from "@/services/bookingService";
 
 const statusStyles = {
     pending: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
+    paid: "bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300",
+    owner_accepted: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
+    in_transit: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300",
+    delivered: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
+    owner_rejected: "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300",
     confirmed: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",
     completed: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
     cancelled: "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300",
@@ -45,13 +50,92 @@ function formatCreatedDate(value) {
     });
 }
 
+function formatDateTime(value) {
+    if (!value) {
+        return "";
+    }
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+        return "";
+    }
+
+    return date.toLocaleString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+    });
+}
+
 function BookingStatusBadge({ status }) {
     const className = statusStyles[status] || "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300";
+    const label = String(status || "pending").replaceAll("_", " ");
 
     return (
         <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${className}`}>
-            {status}
+            {label}
         </span>
+    );
+}
+
+const deliverySteps = [
+    { key: "paid", label: "Payment Complete" },
+    { key: "owner_accepted", label: "Owner Approved" },
+    { key: "in_transit", label: "In Transit" },
+    { key: "delivered", label: "Delivered" },
+];
+
+const deliveryStepOrder = {
+    paid: 0,
+    owner_accepted: 1,
+    in_transit: 2,
+    delivered: 3,
+    completed: 3,
+};
+
+function DeliveryTimeline({ status }) {
+    const activeIndex = deliveryStepOrder[status] ?? -1;
+    const isRejected = status === "owner_rejected";
+    const isCancelled = status === "cancelled";
+
+    return (
+        <div className="rounded-2xl border border-accent/15 bg-bg/70 p-4">
+            <div className="grid gap-3 sm:grid-cols-4">
+                {deliverySteps.map((step, index) => {
+                    const isComplete = activeIndex >= index;
+                    const isCurrent = activeIndex === index;
+
+                    return (
+                        <div key={step.key} className="relative flex items-center gap-3 sm:block">
+                            <div
+                                className={`grid h-8 w-8 shrink-0 place-items-center rounded-full border text-xs font-semibold ${
+                                    isComplete
+                                        ? "border-emerald-500 bg-emerald-500 text-white"
+                                        : "border-accent/25 bg-card text-text/45"
+                                }`}
+                            >
+                                {index + 1}
+                            </div>
+                            <div className="min-w-0 sm:mt-2">
+                                <p className={`text-sm font-semibold ${isComplete ? "text-text" : "text-text/45"}`}>
+                                    {step.label}
+                                </p>
+                                {isCurrent ? <p className="text-xs text-text/60">Current step</p> : null}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+
+            {isRejected || isCancelled ? (
+                <p className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:bg-rose-950/30 dark:text-rose-300">
+                    {isRejected ? "This booking was rejected by the owner." : "This booking was cancelled."}
+                </p>
+            ) : null}
+        </div>
     );
 }
 
@@ -79,8 +163,43 @@ function StatCardSkeleton() {
     );
 }
 
-function BookingCard({ booking, onCancel, isCancelling = false }) {
-    const canCancel = booking.bookingStatus !== "cancelled" && booking.bookingStatus !== "completed";
+function DeliveryConfirmationCard({ booking, onConfirmDelivery, isConfirming = false }) {
+    if (booking.bookingStatus === "in_transit") {
+        return (
+            <div className="rounded-2xl border border-indigo-200 bg-indigo-50 p-4 dark:border-indigo-900/40 dark:bg-indigo-950/30">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-200">Delivery confirmation</p>
+                        <p className="mt-1 text-sm text-indigo-800/75 dark:text-indigo-200/75">
+                            Confirm once you have received the item from the owner.
+                        </p>
+                    </div>
+                    <Button
+                        type="button"
+                        disabled={isConfirming}
+                        onClick={() => onConfirmDelivery?.(booking)}
+                        className="bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-60"
+                    >
+                        {isConfirming ? "Confirming..." : "Item Received"}
+                    </Button>
+                </div>
+            </div>
+        );
+    }
+
+    if (booking.bookingStatus === "delivered") {
+        return (
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-200">
+                Item received{booking.deliveredAt ? ` on ${formatDateTime(booking.deliveredAt)}` : ""}.
+            </div>
+        );
+    }
+
+    return null;
+}
+
+function BookingCard({ booking, onCancel, onConfirmDelivery, isCancelling = false, isConfirmingDelivery = false }) {
+    const canCancel = !["cancelled", "completed", "in_transit", "delivered"].includes(booking.bookingStatus);
 
     return (
         <article className="overflow-hidden rounded-2xl border border-accent/20 bg-card shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
@@ -120,6 +239,14 @@ function BookingCard({ booking, onCancel, isCancelling = false }) {
                             <p className="mt-1 text-sm font-medium text-text">{booking.ownerName}</p>
                         </div>
                     </div>
+
+                    <DeliveryTimeline status={booking.bookingStatus} />
+
+                    <DeliveryConfirmationCard
+                        booking={booking}
+                        onConfirmDelivery={onConfirmDelivery}
+                        isConfirming={isConfirmingDelivery}
+                    />
 
                     {canCancel ? (
                         <div className="flex justify-end">
@@ -180,6 +307,7 @@ export default function BookingsPageClient() {
     const [actionError, setActionError] = useState("");
     const [bookingPendingCancellation, setBookingPendingCancellation] = useState(null);
     const [cancellingBookingId, setCancellingBookingId] = useState("");
+    const [confirmingDeliveryBookingId, setConfirmingDeliveryBookingId] = useState("");
 
     useEffect(() => {
         const loadBookings = async () => {
@@ -250,6 +378,34 @@ export default function BookingsPageClient() {
         }
     };
 
+    const handleConfirmDelivery = async (booking) => {
+        if (!booking?._id) {
+            return;
+        }
+
+        try {
+            setConfirmingDeliveryBookingId(booking._id);
+            setActionError("");
+
+            const updatedBooking = await confirmBookingDelivery(booking._id);
+            setMyBookings((currentBookings) =>
+                currentBookings.map((currentBooking) =>
+                    String(currentBooking._id) === String(booking._id)
+                        ? {
+                            ...currentBooking,
+                            bookingStatus: updatedBooking?.bookingStatus || "delivered",
+                            deliveredAt: updatedBooking?.deliveredAt || new Date().toISOString(),
+                        }
+                        : currentBooking
+                )
+            );
+        } catch (confirmError) {
+            setActionError(confirmError.message || "Unable to confirm delivery right now.");
+        } finally {
+            setConfirmingDeliveryBookingId("");
+        }
+    };
+
     return (
         <div className="min-h-screen bg-bg text-text">
             <Navbar isLoggedIn mobileSidebarActive="Bookings" />
@@ -267,7 +423,7 @@ export default function BookingsPageClient() {
                         ) : (
                             <>
                                 <StatCard label="Total Bookings" value={totalBookings} hint="All your reservations" />
-                                <StatCard label="Total Spendings" value={`$${totalSpendings.toLocaleString("en-IN")}`} hint="All booking payments" valueClassName="text-text" />
+                                <StatCard label="Total Spendings" value={`Rs. ${totalSpendings.toLocaleString("en-IN")}`} hint="All booking payments" valueClassName="text-text" />
                             </>
                         )}
                     </section>
@@ -307,7 +463,9 @@ export default function BookingsPageClient() {
                                             key={booking._id}
                                             booking={booking}
                                             onCancel={handleCancelBooking}
+                                            onConfirmDelivery={handleConfirmDelivery}
                                             isCancelling={cancellingBookingId === booking._id}
+                                            isConfirmingDelivery={confirmingDeliveryBookingId === booking._id}
                                         />
                                     ))}
                                 </div>

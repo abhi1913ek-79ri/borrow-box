@@ -5,7 +5,7 @@ import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import Button from "@/components/Button";
 import { deleteItemListing, getMyItems } from "@/services/itemService";
-import { getMyItemsBookings } from "@/services/bookingService";
+import { dispatchBooking, getMyItemsBookings } from "@/services/bookingService";
 import RemoveItemConfirmModal from "@/components/RemoveItemConfirmModal";
 
 const statusStyles = {
@@ -13,8 +13,53 @@ const statusStyles = {
     booked: "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300",
 };
 
+const bookingStatusStyles = {
+    pending: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
+    paid: "bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300",
+    owner_accepted: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
+    in_transit: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300",
+    delivered: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
+    owner_rejected: "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300",
+    completed: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
+    cancelled: "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300",
+};
+
 function formatCurrency(value) {
-    return `$${Number(value || 0).toLocaleString("en-IN")}`;
+    return `Rs. ${Number(value || 0).toLocaleString("en-IN")}`;
+}
+
+function formatDateRange(startDate, endDate) {
+    if (!startDate || !endDate) {
+        return "Dates unavailable";
+    }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+        return "Dates unavailable";
+    }
+
+    return `${start.toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+    })} - ${end.toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+    })}`;
+}
+
+function BookingStatusBadge({ status }) {
+    const className = bookingStatusStyles[status] || "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300";
+    const label = String(status || "pending").replaceAll("_", " ");
+
+    return (
+        <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${className}`}>
+            {label}
+        </span>
+    );
 }
 
 function StatCard({ label, value, hint, valueClassName = "text-text" }) {
@@ -144,6 +189,66 @@ function ItemCard({ item, itemRevenue, onDelete, isDeleting = false }) {
     );
 }
 
+function OwnerBookingCard({ booking, onDispatch, isDispatching = false }) {
+    const canDispatch = booking.bookingStatus === "owner_accepted";
+
+    return (
+        <article className="overflow-hidden rounded-2xl border border-accent/20 bg-card shadow-sm">
+            <div className="grid gap-4 p-4 sm:grid-cols-[120px_1fr]">
+                <div className="h-32 overflow-hidden rounded-2xl bg-bg/80">
+                    {booking.itemImage ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={booking.itemImage} alt={booking.itemTitle} className="h-full w-full object-cover" />
+                    ) : (
+                        <div className="grid h-full place-items-center text-sm font-semibold text-text/50">
+                            No image
+                        </div>
+                    )}
+                </div>
+
+                <div className="space-y-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Booking request</p>
+                            <h3 className="mt-1 text-lg font-semibold text-text">{booking.itemTitle}</h3>
+                            <p className="mt-1 text-sm text-text/70">Renter: {booking.renterName}</p>
+                        </div>
+                        <BookingStatusBadge status={booking.bookingStatus} />
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-3">
+                        <div className="rounded-2xl bg-bg/80 p-3">
+                            <p className="text-xs uppercase tracking-wide text-text/60">Booking dates</p>
+                            <p className="mt-1 text-sm font-medium text-text">{formatDateRange(booking.startDate, booking.endDate)}</p>
+                        </div>
+                        <div className="rounded-2xl bg-bg/80 p-3">
+                            <p className="text-xs uppercase tracking-wide text-text/60">Amount</p>
+                            <p className="mt-1 text-sm font-medium text-text">{formatCurrency(booking.amountPayable || booking.totalPrice)}</p>
+                        </div>
+                        <div className="rounded-2xl bg-bg/80 p-3">
+                            <p className="text-xs uppercase tracking-wide text-text/60">Payment</p>
+                            <p className="mt-1 text-sm font-medium text-text">{booking.paymentStatus}</p>
+                        </div>
+                    </div>
+
+                    {canDispatch ? (
+                        <div className="flex justify-end">
+                            <Button
+                                type="button"
+                                disabled={isDispatching}
+                                onClick={() => onDispatch?.(booking)}
+                                className="bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-60"
+                            >
+                                {isDispatching ? "Starting..." : "Start Delivery"}
+                            </Button>
+                        </div>
+                    ) : null}
+                </div>
+            </div>
+        </article>
+    );
+}
+
 export default function MyItemsPageClient() {
     const [myItems, setMyItems] = useState([]);
     const [myItemsBookings, setMyItemsBookings] = useState([]);
@@ -151,6 +256,7 @@ export default function MyItemsPageClient() {
     const [error, setError] = useState("");
     const [actionError, setActionError] = useState("");
     const [deletingItemId, setDeletingItemId] = useState("");
+    const [dispatchingBookingId, setDispatchingBookingId] = useState("");
     const [itemPendingRemoval, setItemPendingRemoval] = useState(null);
 
     useEffect(() => {
@@ -197,6 +303,14 @@ export default function MyItemsPageClient() {
 
     const totalListedItems = myItems.length;
     const totalRevenue = itemsWithRevenue.reduce((sum, item) => sum + Number(item.itemRevenue || 0), 0);
+    const sortedOwnerBookings = useMemo(() => {
+        return [...myItemsBookings].sort((left, right) => {
+            const leftTime = new Date(left.createdAt || left.startDate || 0).getTime();
+            const rightTime = new Date(right.createdAt || right.startDate || 0).getTime();
+
+            return rightTime - leftTime;
+        });
+    }, [myItemsBookings]);
 
     const handleDeleteItem = async (item) => {
         if (!item?._id) {
@@ -223,6 +337,30 @@ export default function MyItemsPageClient() {
             setActionError(deleteError.message || "Unable to remove this item right now.");
         } finally {
             setDeletingItemId("");
+        }
+    };
+
+    const handleDispatchBooking = async (booking) => {
+        if (!booking?._id) {
+            return;
+        }
+
+        try {
+            setDispatchingBookingId(booking._id);
+            setActionError("");
+
+            const updatedBooking = await dispatchBooking(booking._id);
+            setMyItemsBookings((currentBookings) =>
+                currentBookings.map((currentBooking) =>
+                    String(currentBooking._id) === String(booking._id)
+                        ? { ...currentBooking, bookingStatus: updatedBooking?.bookingStatus || "in_transit" }
+                        : currentBooking
+                )
+            );
+        } catch (dispatchError) {
+            setActionError(dispatchError.message || "Unable to start delivery right now.");
+        } finally {
+            setDispatchingBookingId("");
         }
     };
 
@@ -297,6 +435,33 @@ export default function MyItemsPageClient() {
                                 <EmptyState
                                     title="No listed items yet"
                                     description="Once you add items from the Add Listing page, they will appear here with revenue and booking counts."
+                                />
+                            )}
+                        </div>
+                    </section>
+
+                    <section className="theme-card overflow-hidden rounded-2xl border border-accent/20 bg-card shadow-sm">
+                        <div className="border-b border-accent/20 bg-linear-to-br from-primary/10 via-card to-accent/10 p-5 sm:p-6">
+                            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">Owner Bookings</p>
+                            <h2 className="mt-2 text-2xl font-semibold text-text sm:text-3xl">Delivery queue</h2>
+                        </div>
+
+                        <div className="space-y-4 p-4 sm:p-6">
+                            {isLoading ? (
+                                <LoadingState />
+                            ) : sortedOwnerBookings.length ? (
+                                sortedOwnerBookings.map((booking) => (
+                                    <OwnerBookingCard
+                                        key={booking._id}
+                                        booking={booking}
+                                        onDispatch={handleDispatchBooking}
+                                        isDispatching={dispatchingBookingId === booking._id}
+                                    />
+                                ))
+                            ) : (
+                                <EmptyState
+                                    title="No owner bookings yet"
+                                    description="Accepted and paid bookings for your listed items will appear here."
                                 />
                             )}
                         </div>

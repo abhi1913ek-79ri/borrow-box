@@ -5,6 +5,7 @@ import AddItemForm from "@/components/AddItemForm";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import { getMyBookings, getMyItemsBookings } from "@/services/bookingService";
+import { getNotifications } from "@/services/notificationService";
 import { getMyItems } from "@/services/itemService";
 
 function formatCurrency(value) {
@@ -33,28 +34,59 @@ function LoadingStats() {
     ));
 }
 
+function formatNotificationTime(createdAt) {
+    if (!createdAt) {
+        return "Just now";
+    }
+
+    const date = new Date(createdAt);
+
+    if (Number.isNaN(date.getTime())) {
+        return "Just now";
+    }
+
+    return date.toLocaleString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+    });
+}
+
 export default function DashboardPageClient() {
     const [myItems, setMyItems] = useState([]);
     const [myBookings, setMyBookings] = useState([]);
     const [myItemsBookings, setMyItemsBookings] = useState([]);
+    const [notifications, setNotifications] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState("");
+    const [notificationsError, setNotificationsError] = useState("");
 
     useEffect(() => {
         const loadDashboardStats = async () => {
             try {
                 setIsLoading(true);
                 setError("");
+                setNotificationsError("");
 
-                const [items, bookings, itemBookings] = await Promise.all([
+                const [items, bookings, itemBookings, notificationData] = await Promise.all([
                     getMyItems(),
                     getMyBookings(),
                     getMyItemsBookings(),
+                    getNotifications().catch((notificationError) => ({
+                        notifications: [],
+                        error: notificationError.message || "Unable to load notifications right now.",
+                    })),
                 ]);
 
                 setMyItems(items);
                 setMyBookings(bookings);
                 setMyItemsBookings(itemBookings);
+                setNotifications(notificationData.notifications || []);
+
+                if (notificationData.error) {
+                    setNotificationsError(notificationData.error);
+                }
             } catch {
                 setError("Unable to load dashboard stats right now.");
             } finally {
@@ -109,11 +141,47 @@ export default function DashboardPageClient() {
 
                     <AddItemForm />
 
-                    <section className="theme-card rounded-2xl border border-dashed border-accent/25 bg-card p-10 text-center">
-                        <h3 className="text-lg font-semibold text-text">No recent activity</h3>
-                        <p className="mt-2 text-sm text-text/70">
-                            Once you receive bookings, updates will show here.
-                        </p>
+                    <section className="theme-card rounded-2xl border border-accent/20 bg-card p-5 shadow-sm">
+                        <div className="flex items-center justify-between gap-4">
+                            <div>
+                                <h3 className="text-lg font-semibold text-text">Booking notifications</h3>
+                                <p className="mt-1 text-sm text-text/70">
+                                    Latest booking updates for your items.
+                                </p>
+                            </div>
+                            <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                                {notifications.filter((notification) => !notification.isRead).length} unread
+                            </span>
+                        </div>
+
+                        <div className="mt-4 space-y-3">
+                            {notificationsError ? (
+                                <div className="rounded-xl border border-dashed border-accent/25 bg-bg/70 px-4 py-4 text-sm text-text/70">
+                                    {notificationsError}
+                                </div>
+                            ) : notifications.length === 0 ? (
+                                <div className="rounded-xl border border-dashed border-accent/25 bg-bg/70 px-4 py-4 text-sm text-text/70">
+                                    No booking notifications yet.
+                                </div>
+                            ) : (
+                                notifications.slice(0, 5).map((notification) => (
+                                    <article
+                                        key={notification.id}
+                                        className={`rounded-xl border px-4 py-3 ${notification.isRead ? "border-accent/15 bg-bg/70" : "border-primary/20 bg-primary/5"}`}
+                                    >
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div>
+                                                <p className="text-sm font-semibold text-text">{notification.title}</p>
+                                                <p className="mt-1 text-sm text-text/70">{notification.message}</p>
+                                            </div>
+                                            <span className="shrink-0 text-[11px] text-text/50">
+                                                {formatNotificationTime(notification.createdAt)}
+                                            </span>
+                                        </div>
+                                    </article>
+                                ))
+                            )}
+                        </div>
                     </section>
                 </div>
             </main>
