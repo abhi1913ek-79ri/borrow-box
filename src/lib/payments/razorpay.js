@@ -103,6 +103,28 @@ export async function captureRazorpayPayment({ paymentId, amount, currency = "IN
   });
 }
 
+export async function refundRazorpayPayment({
+  paymentId,
+  amount,
+  speed = "normal",
+  notes = {},
+}) {
+  if (!paymentId || !amount) {
+    throw new Error("Payment refund details are missing.");
+  }
+
+  const encodedPaymentId = encodeURIComponent(paymentId);
+
+  return requestRazorpay(`/payments/${encodedPaymentId}/refund`, {
+    method: "POST",
+    body: {
+      amount: toRazorpayAmount(amount),
+      speed,
+      notes,
+    },
+  });
+}
+
 export function verifyRazorpayPaymentSignature({ orderId, paymentId, signature }) {
   const { keySecret } = getRazorpayConfig();
   const expectedSignature = crypto

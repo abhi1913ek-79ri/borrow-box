@@ -5,7 +5,7 @@ import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import Button from "@/components/Button";
 import { deleteItemListing, getMyItems } from "@/services/itemService";
-import { dispatchBooking, getMyItemsBookings } from "@/services/bookingService";
+import { confirmBookingReturn, dispatchBooking, getMyItemsBookings } from "@/services/bookingService";
 import RemoveItemConfirmModal from "@/components/RemoveItemConfirmModal";
 
 const statusStyles = {
@@ -19,6 +19,7 @@ const bookingStatusStyles = {
     owner_accepted: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
     in_transit: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300",
     delivered: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
+    return_initiated: "bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-300",
     owner_rejected: "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300",
     completed: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
     cancelled: "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300",
@@ -189,8 +190,9 @@ function ItemCard({ item, itemRevenue, onDelete, isDeleting = false }) {
     );
 }
 
-function OwnerBookingCard({ booking, onDispatch, isDispatching = false }) {
+function OwnerBookingCard({ booking, onDispatch, onConfirmReturn, isDispatching = false, isConfirmingReturn = false }) {
     const canDispatch = booking.bookingStatus === "owner_accepted";
+    const canConfirmReturn = booking.bookingStatus === "return_initiated";
 
     return (
         <article className="overflow-hidden rounded-2xl border border-accent/20 bg-card shadow-sm">
@@ -243,6 +245,19 @@ function OwnerBookingCard({ booking, onDispatch, isDispatching = false }) {
                             </Button>
                         </div>
                     ) : null}
+
+                    {canConfirmReturn ? (
+                        <div className="flex justify-end">
+                            <Button
+                                type="button"
+                                disabled={isConfirmingReturn}
+                                onClick={() => onConfirmReturn?.(booking)}
+                                className="bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-60"
+                            >
+                                {isConfirmingReturn ? "Confirming..." : "Item received"}
+                            </Button>
+                        </div>
+                    ) : null}
                 </div>
             </div>
         </article>
@@ -257,6 +272,7 @@ export default function MyItemsPageClient() {
     const [actionError, setActionError] = useState("");
     const [deletingItemId, setDeletingItemId] = useState("");
     const [dispatchingBookingId, setDispatchingBookingId] = useState("");
+    const [confirmingReturnBookingId, setConfirmingReturnBookingId] = useState("");
     const [itemPendingRemoval, setItemPendingRemoval] = useState(null);
 
     useEffect(() => {
@@ -364,6 +380,34 @@ export default function MyItemsPageClient() {
         }
     };
 
+    const handleConfirmReturn = async (booking) => {
+        if (!booking?._id) {
+            return;
+        }
+
+        try {
+            setConfirmingReturnBookingId(booking._id);
+            setActionError("");
+
+            const updatedBooking = await confirmBookingReturn(booking._id);
+            setMyItemsBookings((currentBookings) =>
+                currentBookings.map((currentBooking) =>
+                    String(currentBooking._id) === String(booking._id)
+                        ? {
+                            ...currentBooking,
+                            bookingStatus: updatedBooking?.bookingStatus || "completed",
+                            returnedAt: updatedBooking?.returnedAt || new Date().toISOString(),
+                        }
+                        : currentBooking
+                )
+            );
+        } catch (returnError) {
+            setActionError(returnError.message || "Unable to confirm item return right now.");
+        } finally {
+            setConfirmingReturnBookingId("");
+        }
+    };
+
     return (
         <div className="min-h-screen bg-bg text-text">
             <Navbar isLoggedIn mobileSidebarActive="My Items" />
@@ -391,6 +435,34 @@ export default function MyItemsPageClient() {
                         )}
                     </section>
 
+                    <section className="theme-card overflow-hidden rounded-2xl border border-accent/20 bg-card shadow-sm">
+                        <div className="border-b border-accent/20 bg-linear-to-br from-primary/10 via-card to-accent/10 p-5 sm:p-6">
+                            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">Owner Bookings</p>
+                            <h2 className="mt-2 text-2xl font-semibold text-text sm:text-3xl">Delivery queue</h2>
+                        </div>
+
+                        <div className="space-y-4 p-4 sm:p-6">
+                            {isLoading ? (
+                                <LoadingState />
+                            ) : sortedOwnerBookings.length ? (
+                                sortedOwnerBookings.map((booking) => (
+                                    <OwnerBookingCard
+                                        key={booking._id}
+                                        booking={booking}
+                                        onDispatch={handleDispatchBooking}
+                                        onConfirmReturn={handleConfirmReturn}
+                                        isDispatching={dispatchingBookingId === booking._id}
+                                        isConfirmingReturn={confirmingReturnBookingId === booking._id}
+                                    />
+                                ))
+                            ) : (
+                                <EmptyState
+                                    title="No owner bookings yet"
+                                    description="Accepted and paid bookings for your listed items will appear here."
+                                />
+                            )}
+                        </div>
+                    </section>
                     <section className="theme-card overflow-hidden rounded-2xl border border-accent/20 bg-card shadow-sm">
                         <div className="border-b border-accent/20 bg-linear-to-br from-primary/10 via-card to-accent/10 p-5 sm:p-6">
                             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">My Items</p>
@@ -440,32 +512,6 @@ export default function MyItemsPageClient() {
                         </div>
                     </section>
 
-                    <section className="theme-card overflow-hidden rounded-2xl border border-accent/20 bg-card shadow-sm">
-                        <div className="border-b border-accent/20 bg-linear-to-br from-primary/10 via-card to-accent/10 p-5 sm:p-6">
-                            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">Owner Bookings</p>
-                            <h2 className="mt-2 text-2xl font-semibold text-text sm:text-3xl">Delivery queue</h2>
-                        </div>
-
-                        <div className="space-y-4 p-4 sm:p-6">
-                            {isLoading ? (
-                                <LoadingState />
-                            ) : sortedOwnerBookings.length ? (
-                                sortedOwnerBookings.map((booking) => (
-                                    <OwnerBookingCard
-                                        key={booking._id}
-                                        booking={booking}
-                                        onDispatch={handleDispatchBooking}
-                                        isDispatching={dispatchingBookingId === booking._id}
-                                    />
-                                ))
-                            ) : (
-                                <EmptyState
-                                    title="No owner bookings yet"
-                                    description="Accepted and paid bookings for your listed items will appear here."
-                                />
-                            )}
-                        </div>
-                    </section>
                 </div>
             </main>
 

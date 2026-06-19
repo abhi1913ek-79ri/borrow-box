@@ -23,7 +23,7 @@ export default async function ItemDetailPage({ params }) {
         ? await Booking.findOne({
             item: item._id,
             renter: session.user.id,
-            bookingStatus: { $in: ["paid", "owner_accepted", "in_transit", "delivered", "confirmed", "completed"] },
+            bookingStatus: { $in: ["paid", "owner_accepted", "in_transit", "delivered", "return_initiated", "confirmed", "completed"] },
         }).lean()
         : null;
 

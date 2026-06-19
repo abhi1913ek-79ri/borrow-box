@@ -157,3 +157,67 @@ export async function confirmBookingDelivery(bookingId) {
 
 	return data.booking;
 }
+
+export async function startBookingReturn(bookingId) {
+	if (!bookingId) {
+		throw new Error("Invalid booking id");
+	}
+
+	const response = await fetch(`/api/bookings/${bookingId}/start-return`, {
+		method: "PATCH",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		cache: "no-store",
+	});
+
+	let data = {};
+
+	try {
+		data = await response.json();
+	} catch {
+		data = {};
+	}
+
+	if (!response.ok) {
+		throw new Error(data.error || "Unable to start return");
+	}
+
+	if (!data.success) {
+		throw new Error(data.error || "Unable to start return");
+	}
+
+	return data.booking;
+}
+
+export async function confirmBookingReturn(bookingId) {
+	if (!bookingId) {
+		throw new Error("Invalid booking id");
+	}
+
+	const response = await fetch(`/api/bookings/${bookingId}/confirm-return`, {
+		method: "PATCH",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		cache: "no-store",
+	});
+
+	let data = {};
+
+	try {
+		data = await response.json();
+	} catch {
+		data = {};
+	}
+
+	if (!response.ok) {
+		throw new Error(data.error || "Unable to confirm return");
+	}
+
+	if (!data.success) {
+		throw new Error(data.error || "Unable to confirm return");
+	}
+
+	return data.booking;
+}

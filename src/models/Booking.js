@@ -27,6 +27,7 @@ const bookingSchema = new mongoose.Schema({
       "owner_accepted",
       "in_transit",
       "delivered",
+      "return_initiated",
       "owner_rejected",
       "confirmed",
       "cancelled",
@@ -39,6 +40,20 @@ const bookingSchema = new mongoose.Schema({
   razorpayOrderId: String,
   razorpayPaymentId: String,
   deliveredAt: Date,
+  returnRequestedAt: Date,
+  returnedAt: Date,
+  depositRefunded: {
+    type: Boolean,
+    default: false,
+  },
+  refundId: String,
+  refundAmount: Number,
+  refundDate: Date,
+  ownerPaid: {
+    type: Boolean,
+    default: false,
+  },
+  ownerPaidAt: Date,
   createdAt: Date,
   updatedAt: Date,
 });

@@ -157,6 +157,27 @@ export default function Navbar({ isLoggedIn = false, mobileSidebarActive = "" })
                                     >
                                         Profile
                                     </Link>
+                                    <Link
+                                        href="/my-items"
+                                        onClick={() => setIsProfileMenuOpen(false)}
+                                        className="block rounded-xl px-3 py-2 text-sm text-text/90 hover:bg-accent/10"
+                                    >
+                                        My Items
+                                    </Link>
+                                    <Link
+                                        href="/bookings"
+                                        onClick={() => setIsProfileMenuOpen(false)}
+                                        className="block rounded-xl px-3 py-2 text-sm text-text/90 hover:bg-accent/10"
+                                    >
+                                        Bookings
+                                    </Link>
+                                    <Link
+                                        href="/wallet"
+                                        onClick={() => setIsProfileMenuOpen(false)}
+                                        className="block rounded-xl px-3 py-2 text-sm text-text/90 hover:bg-accent/10"
+                                    >
+                                        Wallet
+                                    </Link>
 
                                     <button
                                         type="button"
@@ -164,7 +185,7 @@ export default function Navbar({ isLoggedIn = false, mobileSidebarActive = "" })
                                             setIsProfileMenuOpen(false);
                                             setIsLogoutModalOpen(true);
                                         }}
-                                        className="mt-1 w-full rounded-xl px-3 py-2 text-left text-sm text-text/90 hover:bg-accent/10 cursor-pointer"
+                                        className="mt-1 w-full rounded-xl px-3 py-2 text-left text-sm text-red-500 hover:bg-accent/10 cursor-pointer"
                                     >
                                         Log out
                                     </button>

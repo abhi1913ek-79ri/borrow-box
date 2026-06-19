@@ -3,6 +3,7 @@ import Item from "@/models/Item";
 import User from "@/models/User";
 import { sendEmail } from "@/lib/email";
 import { createNotification } from "@/lib/notifications";
+import { creditPendingRentForBooking } from "@/lib/wallets";
 import { captureRazorpayPayment, fetchRazorpayOrderPayments } from "@/lib/payments/razorpay";
 
 function hasValue(value) {
@@ -49,8 +50,17 @@ function escapeHtml(value) {
 
 async function sendOwnerBookingEmail({ ownerId, booking, itemTitle }) {
   if (!ownerId) {
+    console.warn("Owner booking email skipped: missing owner id.", {
+      bookingId: booking?._id ? String(booking._id) : "",
+    });
     return;
   }
+
+  console.info("Preparing owner booking email.", {
+    bookingId: booking?._id ? String(booking._id) : "",
+    ownerId: String(ownerId),
+    itemTitle,
+  });
 
   const [owner, renter] = await Promise.all([
     User.findById(ownerId).select("name email").lean(),
@@ -58,6 +68,11 @@ async function sendOwnerBookingEmail({ ownerId, booking, itemTitle }) {
   ]);
 
   if (!owner?.email) {
+    console.warn("Owner booking email skipped: owner email missing.", {
+      bookingId: booking?._id ? String(booking._id) : "",
+      ownerId: String(ownerId),
+      ownerFound: Boolean(owner),
+    });
     return;
   }
 
@@ -73,7 +88,7 @@ async function sendOwnerBookingEmail({ ownerId, booking, itemTitle }) {
   const bookingDatesHtml = escapeHtml(bookingDates);
   const amountLabelHtml = escapeHtml(amountLabel);
 
-  await sendEmail({
+  const result = await sendEmail({
     to: owner.email,
     subject: `New booking for ${itemTitle}`,
     text: [
@@ -90,6 +105,14 @@ async function sendOwnerBookingEmail({ ownerId, booking, itemTitle }) {
       <p>Amount paid: <strong>${amountLabelHtml}</strong>.</p>
       <p>Please open Vyntra to accept or reject the booking request.</p>
     `,
+  });
+
+  console.info("Owner booking email result.", {
+    bookingId: booking?._id ? String(booking._id) : "",
+    ownerId: String(ownerId),
+    sent: Boolean(result?.ok),
+    skipped: Boolean(result?.skipped),
+    reason: result?.reason || "",
   });
 }
 
@@ -117,7 +140,7 @@ export async function confirmRazorpayBookingPayment({
 
   if (
     booking.paymentStatus === "completed"
-    && ["paid", "owner_accepted", "in_transit", "delivered", "confirmed", "completed"].includes(booking.bookingStatus)
+    && ["paid", "owner_accepted", "in_transit", "delivered", "return_initiated", "confirmed", "completed"].includes(booking.bookingStatus)
   ) {
     return { ok: true, booking };
   }
@@ -188,7 +211,17 @@ export async function confirmRazorpayBookingPayment({
     { new: true }
   );
 
+  await creditPendingRentForBooking(confirmedBooking);
+
   try {
+    console.info("Triggering owner booking email after booking payment confirmation.", {
+      bookingId: confirmedBooking?._id ? String(confirmedBooking._id) : "",
+      ownerId: ownerId ? String(ownerId) : "",
+      itemId: booking.item ? String(booking.item) : "",
+      bookingStatus: confirmedBooking?.bookingStatus,
+      paymentStatus: confirmedBooking?.paymentStatus,
+    });
+
     await sendOwnerBookingEmail({
       ownerId,
       booking: confirmedBooking,

@@ -5,7 +5,7 @@ import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import Button from "@/components/Button";
 import CancelBookingConfirmModal from "@/components/CancelBookingConfirmModal";
-import { cancelBooking, confirmBookingDelivery, getMyBookings } from "@/services/bookingService";
+import { cancelBooking, confirmBookingDelivery, getMyBookings, startBookingReturn } from "@/services/bookingService";
 
 const statusStyles = {
     pending: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
@@ -13,6 +13,7 @@ const statusStyles = {
     owner_accepted: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
     in_transit: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300",
     delivered: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
+    return_initiated: "bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-300",
     owner_rejected: "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300",
     confirmed: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",
     completed: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
@@ -93,6 +94,7 @@ const deliveryStepOrder = {
     owner_accepted: 1,
     in_transit: 2,
     delivered: 3,
+    return_initiated: 3,
     completed: 3,
 };
 
@@ -163,7 +165,13 @@ function StatCardSkeleton() {
     );
 }
 
-function DeliveryConfirmationCard({ booking, onConfirmDelivery, isConfirming = false }) {
+function DeliveryConfirmationCard({
+    booking,
+    onConfirmDelivery,
+    onRequestReturn,
+    isConfirming = false,
+    isRequestingReturn = false,
+}) {
     if (booking.bookingStatus === "in_transit") {
         return (
             <div className="rounded-2xl border border-indigo-200 bg-indigo-50 p-4 dark:border-indigo-900/40 dark:bg-indigo-950/30">
@@ -189,8 +197,29 @@ function DeliveryConfirmationCard({ booking, onConfirmDelivery, isConfirming = f
 
     if (booking.bookingStatus === "delivered") {
         return (
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-200">
-                Item received{booking.deliveredAt ? ` on ${formatDateTime(booking.deliveredAt)}` : ""}.
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900/40 dark:bg-emerald-950/30">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="text-sm text-emerald-800 dark:text-emerald-200">
+                        <p className="font-semibold">Item received{booking.deliveredAt ? ` on ${formatDateTime(booking.deliveredAt)}` : ""}.</p>
+                        <p className="mt-1 text-emerald-800/75 dark:text-emerald-200/75">Notify the owner when you start returning the item.</p>
+                    </div>
+                    <Button
+                        type="button"
+                        disabled={isRequestingReturn}
+                        onClick={() => onRequestReturn?.(booking)}
+                        className="bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-60"
+                    >
+                        {isRequestingReturn ? "Starting..." : "Item Return"}
+                    </Button>
+                </div>
+            </div>
+        );
+    }
+
+    if (booking.bookingStatus === "return_initiated") {
+        return (
+            <div className="rounded-2xl border border-violet-200 bg-violet-50 p-4 text-sm text-violet-800 dark:border-violet-900/40 dark:bg-violet-950/30 dark:text-violet-200">
+                Return started{booking.returnRequestedAt ? ` on ${formatDateTime(booking.returnRequestedAt)}` : ""}. Waiting for owner to confirm the item was received.
             </div>
         );
     }
@@ -198,8 +227,16 @@ function DeliveryConfirmationCard({ booking, onConfirmDelivery, isConfirming = f
     return null;
 }
 
-function BookingCard({ booking, onCancel, onConfirmDelivery, isCancelling = false, isConfirmingDelivery = false }) {
-    const canCancel = !["cancelled", "completed", "in_transit", "delivered"].includes(booking.bookingStatus);
+function BookingCard({
+    booking,
+    onCancel,
+    onConfirmDelivery,
+    onRequestReturn,
+    isCancelling = false,
+    isConfirmingDelivery = false,
+    isRequestingReturn = false,
+}) {
+    const canCancel = !["cancelled", "completed", "in_transit", "delivered", "return_initiated"].includes(booking.bookingStatus);
 
     return (
         <article className="overflow-hidden rounded-2xl border border-accent/20 bg-card shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
@@ -245,7 +282,9 @@ function BookingCard({ booking, onCancel, onConfirmDelivery, isCancelling = fals
                     <DeliveryConfirmationCard
                         booking={booking}
                         onConfirmDelivery={onConfirmDelivery}
+                        onRequestReturn={onRequestReturn}
                         isConfirming={isConfirmingDelivery}
+                        isRequestingReturn={isRequestingReturn}
                     />
 
                     {canCancel ? (
@@ -308,6 +347,7 @@ export default function BookingsPageClient() {
     const [bookingPendingCancellation, setBookingPendingCancellation] = useState(null);
     const [cancellingBookingId, setCancellingBookingId] = useState("");
     const [confirmingDeliveryBookingId, setConfirmingDeliveryBookingId] = useState("");
+    const [requestingReturnBookingId, setRequestingReturnBookingId] = useState("");
 
     useEffect(() => {
         const loadBookings = async () => {
@@ -406,6 +446,34 @@ export default function BookingsPageClient() {
         }
     };
 
+    const handleRequestReturn = async (booking) => {
+        if (!booking?._id) {
+            return;
+        }
+
+        try {
+            setRequestingReturnBookingId(booking._id);
+            setActionError("");
+
+            const updatedBooking = await startBookingReturn(booking._id);
+            setMyBookings((currentBookings) =>
+                currentBookings.map((currentBooking) =>
+                    String(currentBooking._id) === String(booking._id)
+                        ? {
+                            ...currentBooking,
+                            bookingStatus: updatedBooking?.bookingStatus || "return_initiated",
+                            returnRequestedAt: updatedBooking?.returnRequestedAt || new Date().toISOString(),
+                        }
+                        : currentBooking
+                )
+            );
+        } catch (returnError) {
+            setActionError(returnError.message || "Unable to start return right now.");
+        } finally {
+            setRequestingReturnBookingId("");
+        }
+    };
+
     return (
         <div className="min-h-screen bg-bg text-text">
             <Navbar isLoggedIn mobileSidebarActive="Bookings" />
@@ -464,8 +532,10 @@ export default function BookingsPageClient() {
                                             booking={booking}
                                             onCancel={handleCancelBooking}
                                             onConfirmDelivery={handleConfirmDelivery}
+                                            onRequestReturn={handleRequestReturn}
                                             isCancelling={cancellingBookingId === booking._id}
                                             isConfirmingDelivery={confirmingDeliveryBookingId === booking._id}
+                                            isRequestingReturn={requestingReturnBookingId === booking._id}
                                         />
                                     ))}
                                 </div>
