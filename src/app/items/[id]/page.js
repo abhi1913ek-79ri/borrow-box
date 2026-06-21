@@ -23,7 +23,7 @@ export default async function ItemDetailPage({ params }) {
         ? await Booking.findOne({
             item: item._id,
             renter: session.user.id,
-            bookingStatus: { $in: ["confirmed", "completed"] },
+            bookingStatus: { $in: ["paid", "owner_accepted", "in_transit", "delivered", "return_initiated", "confirmed", "completed"] },
         }).lean()
         : null;
 
@@ -122,7 +122,7 @@ export default async function ItemDetailPage({ params }) {
 
                                 <div className="rounded-2xl bg-primary/10 px-4 py-3 text-right">
                                     <p className="text-xs uppercase tracking-wide text-primary">Deposit</p>
-                                    <p className="text-2xl font-semibold text-text">${item.depositAmount || 0}</p>
+                                    <p className="text-2xl font-semibold text-text">Rs. {item.depositAmount || 0}</p>
                                 </div>
                             </div>
 
@@ -139,11 +139,11 @@ export default async function ItemDetailPage({ params }) {
                                 </div>
                                 <div className="rounded-xl bg-bg/80 p-3">
                                     <p className="text-xs uppercase tracking-wide text-text/70">Price / Day</p>
-                                    <p className="mt-1 font-semibold text-text">${item.pricePerDay || 0}</p>
+                                    <p className="mt-1 font-semibold text-text">Rs. {item.pricePerDay || 0}</p>
                                 </div>
                                 <div className="rounded-xl bg-bg/80 p-3">
                                     <p className="text-xs uppercase tracking-wide text-text/70">Price / Hour</p>
-                                    <p className="mt-1 font-semibold text-text">${item.pricePerHour || 0}</p>
+                                    <p className="mt-1 font-semibold text-text">Rs. {item.pricePerHour || 0}</p>
                                 </div>
                             </div>
 

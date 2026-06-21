@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Button from "./Button";
-import { cancelBooking } from "@/services/bookingService";
+import { cancelBooking, confirmBookingDelivery } from "@/services/bookingService";
 import {
     createRazorpayBookingOrder,
     loadRazorpayCheckout,
@@ -45,6 +45,7 @@ export default function BookingWidget({
     const [statusMessage, setStatusMessage] = useState("");
     const [statusType, setStatusType] = useState("success");
     const [activeBooking, setActiveBooking] = useState(currentBooking);
+    const [isConfirmingDelivery, setIsConfirmingDelivery] = useState(false);
 
     const dayCount = useMemo(() => {
         const parsedStart = new Date(`${startDate}T00:00:00Z`);
@@ -59,8 +60,12 @@ export default function BookingWidget({
 
     const totalPrice = dailyPrice * dayCount;
     const payableNow = totalPrice + depositAmount;
-    const hasActiveBooking = Boolean(activeBooking && activeBooking.bookingStatus !== "cancelled");
-    const showCancelAction = hasActiveBooking;
+    const hasActiveBooking = Boolean(
+        activeBooking && !["cancelled", "owner_rejected"].includes(activeBooking.bookingStatus)
+    );
+    const showCancelAction = Boolean(
+        activeBooking && !["cancelled", "owner_rejected", "in_transit", "delivered", "completed"].includes(activeBooking.bookingStatus)
+    );
     const showOutOfStock = isItemOutOfStock && !hasActiveBooking && !isOwnedByCurrentUser;
     const isBookingDisabled = isSubmitting || showCancelAction || showOutOfStock;
 
@@ -127,16 +132,16 @@ export default function BookingWidget({
             });
 
             setStatusType("success");
-            setStatusMessage("Payment verified and booking confirmed successfully.");
-            setActiveBooking({ _id: booking._id, bookingStatus: "confirmed" });
+            setStatusMessage("Payment verified. The owner can now confirm your booking.");
+            setActiveBooking({ _id: booking._id, bookingStatus: booking.bookingStatus || "paid" });
         } catch (error) {
             if (payment?.bookingId) {
                 const syncedBooking = await syncRazorpayBookingPayment({ bookingId: payment.bookingId });
 
-                if (syncedBooking?.bookingStatus === "confirmed") {
+                if (["paid", "owner_accepted", "in_transit", "delivered"].includes(syncedBooking?.bookingStatus)) {
                     setStatusType("success");
-                    setStatusMessage("Payment found in Razorpay and booking confirmed successfully.");
-                    setActiveBooking({ _id: syncedBooking._id, bookingStatus: "confirmed" });
+                    setStatusMessage("Payment found in Razorpay. The owner can now confirm your booking.");
+                    setActiveBooking({ _id: syncedBooking._id, bookingStatus: syncedBooking.bookingStatus });
                     return;
                 }
             }
@@ -167,6 +172,33 @@ export default function BookingWidget({
             setStatusMessage(error.message || "Unable to cancel booking.");
         } finally {
             setIsCancelling(false);
+        }
+    };
+
+    const handleConfirmDelivery = async () => {
+        if (!activeBooking?._id) {
+            setStatusType("error");
+            setStatusMessage("Unable to confirm this delivery right now.");
+            return;
+        }
+
+        try {
+            setIsConfirmingDelivery(true);
+            setStatusMessage("");
+
+            const deliveredBooking = await confirmBookingDelivery(activeBooking._id);
+            setActiveBooking((currentBooking) => ({
+                ...currentBooking,
+                bookingStatus: deliveredBooking?.bookingStatus || "delivered",
+                deliveredAt: deliveredBooking?.deliveredAt || new Date().toISOString(),
+            }));
+            setStatusType("success");
+            setStatusMessage("Delivery confirmed. Thanks for confirming receipt.");
+        } catch (error) {
+            setStatusType("error");
+            setStatusMessage(error.message || "Unable to confirm delivery.");
+        } finally {
+            setIsConfirmingDelivery(false);
         }
     };
 
@@ -207,6 +239,29 @@ export default function BookingWidget({
                 Razorpay test checkout
             </div>
 
+            {activeBooking?.bookingStatus === "in_transit" ? (
+                <div className="mt-4 rounded-2xl border border-indigo-200 bg-indigo-50 p-4 dark:border-indigo-900/40 dark:bg-indigo-950/30">
+                    <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-200">Delivery confirmation</p>
+                    <p className="mt-1 text-sm text-indigo-800/75 dark:text-indigo-200/75">
+                        Confirm once you have received this item from the owner.
+                    </p>
+                    <Button
+                        type="button"
+                        disabled={isConfirmingDelivery}
+                        onClick={handleConfirmDelivery}
+                        className="mt-3 w-full bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-60"
+                    >
+                        {isConfirmingDelivery ? "Confirming..." : "Item Received"}
+                    </Button>
+                </div>
+            ) : null}
+
+            {activeBooking?.bookingStatus === "delivered" ? (
+                <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-200">
+                    Item received and delivery confirmed.
+                </div>
+            ) : null}
+
             <div className="mt-4 space-y-2 text-sm">
                 <div className="flex items-center justify-between text-text/70">
                     <span>
@@ -236,6 +291,14 @@ export default function BookingWidget({
                     disabled={isCancelling}
                 >
                     {isCancelling ? "Cancelling..." : "Cancel Booking"}
+                </Button>
+            ) : hasActiveBooking ? (
+                <Button className="mt-5 w-full bg-slate-500 text-white hover:bg-slate-600" disabled>
+                    {activeBooking?.bookingStatus === "in_transit"
+                        ? "Delivery in progress"
+                        : activeBooking?.bookingStatus === "delivered"
+                            ? "Delivery confirmed"
+                            : "Booking active"}
                 </Button>
             ) : showOutOfStock ? (
                 <Button className="mt-5 w-full bg-slate-500 text-white hover:bg-slate-600" disabled>
