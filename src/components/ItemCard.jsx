@@ -65,18 +65,18 @@ export default function ItemCard({
                 <div className="grid grid-cols-2 gap-2 text-xs text-text/70">
                     <div className="rounded-xl bg-bg/70 px-3 py-2">
                         <span className="block text-text/55">Per day</span>
-                        <span className="font-semibold text-text">${pricePerDay}</span>
+                        <span className="font-semibold text-text">Rs. {pricePerDay}</span>
                     </div>
                     <div className="rounded-xl bg-bg/70 px-3 py-2">
                         <span className="block text-text/55">Per hour</span>
-                        <span className="font-semibold text-text">${pricePerHour}</span>
+                        <span className="font-semibold text-text">Rs. {pricePerHour}</span>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 text-xs text-text/70">
                     <div className="rounded-xl bg-bg/70 px-3 py-2">
                         <span className="block text-text/55">Deposit</span>
-                        <span className="font-semibold text-text">${depositAmount}</span>
+                        <span className="font-semibold text-text">Rs. {depositAmount}</span>
                     </div>
                     <div className="rounded-xl bg-bg/70 px-3 py-2">
                         <span className="block text-text/55">Rating</span>
@@ -86,7 +86,7 @@ export default function ItemCard({
 
                 <div className="flex items-center justify-between">
                     <p className="text-base font-semibold text-text">
-                        ${pricePerDay}
+                        Rs. {pricePerDay}
                         <span className="ml-1 text-sm font-normal text-text/70">/day</span>
                     </p>
                     {isBookedByCurrentUser ? (

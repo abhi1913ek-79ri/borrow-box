@@ -8,6 +8,7 @@ const menuItems = [
     { label: "Browse Items", href: "/items", icon: "grid" },
     { label: "My Items", href: "/my-items", icon: "box" },
     { label: "Bookings", href: "/bookings", icon: "calendar" },
+    { label: "Wallet", href: "/wallet", icon: "wallet" },
     { label: "Profile", href: "/profile", icon: "user" },
 ];
 
@@ -48,6 +49,16 @@ function Icon({ type }) {
             <svg className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
                 <circle cx="12" cy="8" r="4" />
                 <path d="M4 20c1.8-3.2 4.4-4.8 8-4.8S18.2 16.8 20 20" />
+            </svg>
+        );
+    }
+
+    if (type === "wallet") {
+        return (
+            <svg className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+                <rect x="3.5" y="6" width="17" height="12" rx="3" />
+                <path d="M16 10.5h2.5v3H16a1.5 1.5 0 0 1 0-3Z" />
+                <path d="M6.5 6V4.8c0-1 .9-1.7 1.8-1.4l7.4 2.6" />
             </svg>
         );
     }

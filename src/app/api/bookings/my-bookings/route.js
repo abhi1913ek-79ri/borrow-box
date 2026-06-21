@@ -45,6 +45,14 @@ export async function GET() {
       amountPayable: Number(booking.amountPayable || booking.totalPrice || 0),
       paymentStatus: booking.paymentStatus || "pending",
       bookingStatus: booking.bookingStatus || "pending",
+      actionTaken: ["owner_accepted", "owner_rejected", "in_transit", "delivered", "return_initiated", "completed"].includes(booking.bookingStatus),
+      deliveredAt: booking.deliveredAt || null,
+      returnRequestedAt: booking.returnRequestedAt || null,
+      returnedAt: booking.returnedAt || null,
+      depositRefunded: Boolean(booking.depositRefunded),
+      refundId: booking.refundId || "",
+      refundAmount: Number(booking.refundAmount || 0),
+      refundDate: booking.refundDate || null,
       createdAt: booking.createdAt || booking.updatedAt || null,
     }));
 
