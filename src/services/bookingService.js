@@ -62,6 +62,46 @@ export function getMyItemsBookings() {
 	return fetchBookingList("/api/bookings/my-items-bookings");
 }
 
+async function patchBookingAction(bookingId, action, fallbackError) {
+	if (!bookingId) {
+		throw new Error("Invalid booking id");
+	}
+
+	const response = await fetch(`/api/bookings/${bookingId}/${action}`, {
+		method: "PATCH",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		cache: "no-store",
+	});
+
+	let data = {};
+
+	try {
+		data = await response.json();
+	} catch {
+		data = {};
+	}
+
+	if (!response.ok) {
+		throw new Error(data.error || fallbackError);
+	}
+
+	if (!data.success) {
+		throw new Error(data.error || fallbackError);
+	}
+
+	return data.booking;
+}
+
+export function acceptBooking(bookingId) {
+	return patchBookingAction(bookingId, "accept", "Unable to accept booking");
+}
+
+export function rejectBooking(bookingId) {
+	return patchBookingAction(bookingId, "reject", "Unable to reject booking");
+}
+
 export async function cancelBooking(bookingId) {
 	if (!bookingId) {
 		throw new Error("Invalid booking id");
@@ -95,35 +135,7 @@ export async function cancelBooking(bookingId) {
 }
 
 export async function dispatchBooking(bookingId) {
-	if (!bookingId) {
-		throw new Error("Invalid booking id");
-	}
-
-	const response = await fetch(`/api/bookings/${bookingId}/dispatch`, {
-		method: "PATCH",
-		headers: {
-			"Content-Type": "application/json",
-		},
-		cache: "no-store",
-	});
-
-	let data = {};
-
-	try {
-		data = await response.json();
-	} catch {
-		data = {};
-	}
-
-	if (!response.ok) {
-		throw new Error(data.error || "Unable to start delivery");
-	}
-
-	if (!data.success) {
-		throw new Error(data.error || "Unable to start delivery");
-	}
-
-	return data.booking;
+	return patchBookingAction(bookingId, "dispatch", "Unable to start delivery");
 }
 
 export async function confirmBookingDelivery(bookingId) {
@@ -191,33 +203,22 @@ export async function startBookingReturn(bookingId) {
 }
 
 export async function confirmBookingReturn(bookingId) {
-	if (!bookingId) {
-		throw new Error("Invalid booking id");
+	return patchBookingAction(bookingId, "confirm-return", "Unable to confirm return");
+}
+
+export function performOwnerBookingAction(bookingId, action) {
+	const handlers = {
+		accept: acceptBooking,
+		reject: rejectBooking,
+		dispatch: dispatchBooking,
+		confirmReturn: confirmBookingReturn,
+	};
+
+	const handler = handlers[action];
+
+	if (!handler) {
+		throw new Error("Invalid booking action");
 	}
 
-	const response = await fetch(`/api/bookings/${bookingId}/confirm-return`, {
-		method: "PATCH",
-		headers: {
-			"Content-Type": "application/json",
-		},
-		cache: "no-store",
-	});
-
-	let data = {};
-
-	try {
-		data = await response.json();
-	} catch {
-		data = {};
-	}
-
-	if (!response.ok) {
-		throw new Error(data.error || "Unable to confirm return");
-	}
-
-	if (!data.success) {
-		throw new Error(data.error || "Unable to confirm return");
-	}
-
-	return data.booking;
+	return handler(bookingId);
 }

@@ -27,6 +27,8 @@ const categoryLabels = {
     electronics: "Electronics",
 };
 
+const ACTIVE_BOOKING_STATUSES = ["paid", "owner_accepted", "in_transit", "delivered", "return_initiated"];
+
 export default function ItemsPageClient() {
     const { data: session, status } = useSession();
     const searchParams = useSearchParams();
@@ -114,6 +116,7 @@ export default function ItemsPageClient() {
                 const bookings = await getMyBookings();
                 setBookedItemIds(
                     bookings
+                        .filter((booking) => ACTIVE_BOOKING_STATUSES.includes(booking.bookingStatus))
                         .map((booking) => booking.itemId || booking.item?._id || booking.item)
                         .filter(Boolean)
                         .map(String)

@@ -7,6 +7,8 @@ import { authOptions } from "@/lib/auth";
 import Booking from "@/models/Booking";
 import Item from "@/models/Item";
 
+const ACTIVE_BOOKING_STATUSES = ["paid", "owner_accepted", "in_transit", "delivered", "return_initiated"];
+
 export default async function ItemDetailPage({ params }) {
     await connectDB();
 
@@ -23,7 +25,7 @@ export default async function ItemDetailPage({ params }) {
         ? await Booking.findOne({
             item: item._id,
             renter: session.user.id,
-            bookingStatus: { $in: ["paid", "owner_accepted", "in_transit", "delivered", "return_initiated", "confirmed", "completed"] },
+            bookingStatus: { $in: ACTIVE_BOOKING_STATUSES },
         }).lean()
         : null;
 
@@ -73,15 +75,15 @@ export default async function ItemDetailPage({ params }) {
                                 <div className="relative grid gap-3 sm:grid-cols-3">
                                     <div className="rounded-2xl bg-bg/15 p-3 backdrop-blur">
                                         <p className="text-xs text-bg/85">Deposit Amount</p>
-                                        <p className="text-lg font-semibold">${item.depositAmount || 0}</p>
+                                        <p className="text-lg font-semibold">Rs.{item.depositAmount || 0}</p>
                                     </div>
                                     <div className="rounded-2xl bg-bg/15 p-3 backdrop-blur">
                                         <p className="text-xs text-bg/85">Price / Day</p>
-                                        <p className="text-lg font-semibold">${item.pricePerDay || 0}</p>
+                                        <p className="text-lg font-semibold">Rs.{item.pricePerDay || 0}</p>
                                     </div>
                                     <div className="rounded-2xl bg-bg/15 p-3 backdrop-blur">
                                         <p className="text-xs text-bg/85">Price / Hour</p>
-                                        <p className="text-lg font-semibold">${item.pricePerHour || 0}</p>
+                                        <p className="text-lg font-semibold">Rs.{item.pricePerHour || 0}</p>
                                     </div>
                                 </div>
                             </div>
