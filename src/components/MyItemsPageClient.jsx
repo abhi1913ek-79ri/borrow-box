@@ -5,8 +5,13 @@ import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import Button from "@/components/Button";
 import { deleteItemListing, getMyItems } from "@/services/itemService";
-import { confirmBookingReturn, dispatchBooking, getMyItemsBookings } from "@/services/bookingService";
+import { getMyItemsBookings } from "@/services/bookingService";
 import RemoveItemConfirmModal from "@/components/RemoveItemConfirmModal";
+import OwnerBookingActions, {
+    hasOwnerBookingActions,
+    mergeOwnerBookingUpdate,
+    OWNER_BOOKING_STATUS_UPDATED,
+} from "@/components/OwnerBookingActions";
 
 const statusStyles = {
     available: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
@@ -120,7 +125,17 @@ function EmptyState({ title, description }) {
     );
 }
 
-function ItemCard({ item, itemRevenue, onDelete, isDeleting = false }) {
+function ItemCard({
+    item,
+    itemRevenue,
+    activeBooking,
+    ownerActionLoadingKey = "",
+    onOwnerActionLoadingChange,
+    onOwnerActionComplete,
+    onOwnerActionError,
+    onDelete,
+    isDeleting = false,
+}) {
     const imageUrl = Array.isArray(item.images) && item.images.length > 0 ? item.images[0] : "";
     const isAvailable = item.availability?.isAvailable ?? true;
 
@@ -173,6 +188,24 @@ function ItemCard({ item, itemRevenue, onDelete, isDeleting = false }) {
                         </div>
                     </div>
 
+                    {activeBooking ? (
+                        <div className="rounded-2xl border border-accent/15 bg-bg/70 p-3">
+                            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-text/60">
+                                    Latest booking from {activeBooking.renterName}
+                                </p>
+                                <BookingStatusBadge status={activeBooking.bookingStatus} />
+                            </div>
+                            <OwnerBookingActions
+                                booking={activeBooking}
+                                loadingAction={ownerActionLoadingKey}
+                                onLoadingActionChange={(action) => onOwnerActionLoadingChange?.(activeBooking._id, action)}
+                                onActionComplete={onOwnerActionComplete}
+                                onActionError={onOwnerActionError}
+                            />
+                        </div>
+                    ) : null}
+
                     <div className="flex justify-end">
                         <Button
                             type="button"
@@ -190,10 +223,13 @@ function ItemCard({ item, itemRevenue, onDelete, isDeleting = false }) {
     );
 }
 
-function OwnerBookingCard({ booking, onDispatch, onConfirmReturn, isDispatching = false, isConfirmingReturn = false }) {
-    const canDispatch = booking.bookingStatus === "owner_accepted";
-    const canConfirmReturn = booking.bookingStatus === "return_initiated";
-
+function OwnerBookingCard({
+    booking,
+    ownerActionLoadingKey = "",
+    onOwnerActionLoadingChange,
+    onOwnerActionComplete,
+    onOwnerActionError,
+}) {
     return (
         <article className="overflow-hidden rounded-2xl border border-accent/20 bg-card shadow-sm">
             <div className="grid gap-4 p-4 sm:grid-cols-[120px_1fr]">
@@ -233,31 +269,13 @@ function OwnerBookingCard({ booking, onDispatch, onConfirmReturn, isDispatching 
                         </div>
                     </div>
 
-                    {canDispatch ? (
-                        <div className="flex justify-end">
-                            <Button
-                                type="button"
-                                disabled={isDispatching}
-                                onClick={() => onDispatch?.(booking)}
-                                className="bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-60"
-                            >
-                                {isDispatching ? "Starting..." : "Start Delivery"}
-                            </Button>
-                        </div>
-                    ) : null}
-
-                    {canConfirmReturn ? (
-                        <div className="flex justify-end">
-                            <Button
-                                type="button"
-                                disabled={isConfirmingReturn}
-                                onClick={() => onConfirmReturn?.(booking)}
-                                className="bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-60"
-                            >
-                                {isConfirmingReturn ? "Confirming..." : "Item received"}
-                            </Button>
-                        </div>
-                    ) : null}
+                    <OwnerBookingActions
+                        booking={booking}
+                        loadingAction={ownerActionLoadingKey}
+                        onLoadingActionChange={(action) => onOwnerActionLoadingChange?.(booking._id, action)}
+                        onActionComplete={onOwnerActionComplete}
+                        onActionError={onOwnerActionError}
+                    />
                 </div>
             </div>
         </article>
@@ -271,8 +289,7 @@ export default function MyItemsPageClient() {
     const [error, setError] = useState("");
     const [actionError, setActionError] = useState("");
     const [deletingItemId, setDeletingItemId] = useState("");
-    const [dispatchingBookingId, setDispatchingBookingId] = useState("");
-    const [confirmingReturnBookingId, setConfirmingReturnBookingId] = useState("");
+    const [ownerActionLoadingKey, setOwnerActionLoadingKey] = useState("");
     const [itemPendingRemoval, setItemPendingRemoval] = useState(null);
 
     useEffect(() => {
@@ -299,6 +316,26 @@ export default function MyItemsPageClient() {
         loadItems();
     }, []);
 
+    useEffect(() => {
+        const handleOwnerBookingStatusUpdate = (event) => {
+            const updatedBooking = event.detail?.booking;
+
+            if (!updatedBooking) {
+                return;
+            }
+
+            setMyItemsBookings((currentBookings) =>
+                currentBookings.map((booking) => mergeOwnerBookingUpdate(booking, updatedBooking))
+            );
+        };
+
+        window.addEventListener(OWNER_BOOKING_STATUS_UPDATED, handleOwnerBookingStatusUpdate);
+
+        return () => {
+            window.removeEventListener(OWNER_BOOKING_STATUS_UPDATED, handleOwnerBookingStatusUpdate);
+        };
+    }, []);
+
     const itemsWithRevenue = useMemo(() => {
         const revenueByItem = myItemsBookings.reduce((accumulator, booking) => {
             const key = booking.itemId || booking.item?._id || booking.item;
@@ -316,6 +353,30 @@ export default function MyItemsPageClient() {
             itemRevenue: revenueByItem[item._id] || 0,
         }));
     }, [myItems, myItemsBookings]);
+
+    const latestBookingByItem = useMemo(() => {
+        return myItemsBookings.reduce((bookingsByItem, booking) => {
+            const key = booking.itemId || booking.item?._id || booking.item;
+
+            if (!key) {
+                return bookingsByItem;
+            }
+
+            const currentBooking = bookingsByItem[key];
+            const currentTime = new Date(currentBooking?.createdAt || currentBooking?.startDate || 0).getTime();
+            const bookingTime = new Date(booking.createdAt || booking.startDate || 0).getTime();
+
+            if (
+                !currentBooking
+                || (hasOwnerBookingActions(booking) && !hasOwnerBookingActions(currentBooking))
+                || (hasOwnerBookingActions(booking) === hasOwnerBookingActions(currentBooking) && bookingTime > currentTime)
+            ) {
+                bookingsByItem[key] = booking;
+            }
+
+            return bookingsByItem;
+        }, {});
+    }, [myItemsBookings]);
 
     const totalListedItems = myItems.length;
     const totalRevenue = itemsWithRevenue.reduce((sum, item) => sum + Number(item.itemRevenue || 0), 0);
@@ -356,56 +417,19 @@ export default function MyItemsPageClient() {
         }
     };
 
-    const handleDispatchBooking = async (booking) => {
-        if (!booking?._id) {
-            return;
-        }
-
-        try {
-            setDispatchingBookingId(booking._id);
-            setActionError("");
-
-            const updatedBooking = await dispatchBooking(booking._id);
-            setMyItemsBookings((currentBookings) =>
-                currentBookings.map((currentBooking) =>
-                    String(currentBooking._id) === String(booking._id)
-                        ? { ...currentBooking, bookingStatus: updatedBooking?.bookingStatus || "in_transit" }
-                        : currentBooking
-                )
-            );
-        } catch (dispatchError) {
-            setActionError(dispatchError.message || "Unable to start delivery right now.");
-        } finally {
-            setDispatchingBookingId("");
-        }
+    const handleOwnerActionLoadingChange = (bookingId, action) => {
+        setOwnerActionLoadingKey(action ? `${bookingId}:${action}` : "");
     };
 
-    const handleConfirmReturn = async (booking) => {
-        if (!booking?._id) {
-            return;
-        }
+    const handleOwnerActionComplete = (updatedBooking) => {
+        setActionError("");
+        setMyItemsBookings((currentBookings) =>
+            currentBookings.map((booking) => mergeOwnerBookingUpdate(booking, updatedBooking))
+        );
+    };
 
-        try {
-            setConfirmingReturnBookingId(booking._id);
-            setActionError("");
-
-            const updatedBooking = await confirmBookingReturn(booking._id);
-            setMyItemsBookings((currentBookings) =>
-                currentBookings.map((currentBooking) =>
-                    String(currentBooking._id) === String(booking._id)
-                        ? {
-                            ...currentBooking,
-                            bookingStatus: updatedBooking?.bookingStatus || "completed",
-                            returnedAt: updatedBooking?.returnedAt || new Date().toISOString(),
-                        }
-                        : currentBooking
-                )
-            );
-        } catch (returnError) {
-            setActionError(returnError.message || "Unable to confirm item return right now.");
-        } finally {
-            setConfirmingReturnBookingId("");
-        }
+    const handleOwnerActionError = (actionErrorResult) => {
+        setActionError(actionErrorResult.message || "Unable to update booking right now.");
     };
 
     return (
@@ -449,10 +473,10 @@ export default function MyItemsPageClient() {
                                     <OwnerBookingCard
                                         key={booking._id}
                                         booking={booking}
-                                        onDispatch={handleDispatchBooking}
-                                        onConfirmReturn={handleConfirmReturn}
-                                        isDispatching={dispatchingBookingId === booking._id}
-                                        isConfirmingReturn={confirmingReturnBookingId === booking._id}
+                                        ownerActionLoadingKey={ownerActionLoadingKey.startsWith(`${booking._id}:`) ? ownerActionLoadingKey.split(":")[1] : ""}
+                                        onOwnerActionLoadingChange={handleOwnerActionLoadingChange}
+                                        onOwnerActionComplete={handleOwnerActionComplete}
+                                        onOwnerActionError={handleOwnerActionError}
                                     />
                                 ))
                             ) : (
@@ -497,6 +521,11 @@ export default function MyItemsPageClient() {
                                             key={item._id}
                                             item={item}
                                             itemRevenue={item.itemRevenue}
+                                            activeBooking={latestBookingByItem[item._id]}
+                                            ownerActionLoadingKey={ownerActionLoadingKey.startsWith(`${latestBookingByItem[item._id]?._id}:`) ? ownerActionLoadingKey.split(":")[1] : ""}
+                                            onOwnerActionLoadingChange={handleOwnerActionLoadingChange}
+                                            onOwnerActionComplete={handleOwnerActionComplete}
+                                            onOwnerActionError={handleOwnerActionError}
                                             onDelete={handleDeleteItem}
                                             isDeleting={deletingItemId === item._id}
                                         />

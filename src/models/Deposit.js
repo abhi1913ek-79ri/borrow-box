@@ -1,13 +1,14 @@
 import mongoose from "mongoose";
 
-const transactionSchema = new mongoose.Schema({
+const depositSchema = new mongoose.Schema({
   booking: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Booking",
     required: true,
+    unique: true,
     index: true,
   },
-  user: {
+  renter: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     required: true,
@@ -16,6 +17,7 @@ const transactionSchema = new mongoose.Schema({
   owner: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
+    required: true,
     index: true,
   },
   amount: {
@@ -23,24 +25,20 @@ const transactionSchema = new mongoose.Schema({
     required: true,
     min: 0,
   },
-  type: {
+  depositStatus: {
     type: String,
-    enum: ["RENT_EARNING", "DEPOSIT_REFUND"],
-    required: true,
+    enum: ["LOCKED", "RELEASED"],
+    default: "LOCKED",
     index: true,
   },
-  status: {
-    type: String,
-    default: "COMPLETED",
-    index: true,
-  },
-  createdAt: {
+  lockedAt: {
     type: Date,
     default: Date.now,
-    index: true,
+  },
+  releasedAt: {
+    type: Date,
+    default: null,
   },
 });
 
-transactionSchema.index({ booking: 1, user: 1, type: 1 }, { unique: true });
-
-export default mongoose.models.Transaction || mongoose.model("Transaction", transactionSchema);
+export default mongoose.models.Deposit || mongoose.model("Deposit", depositSchema);

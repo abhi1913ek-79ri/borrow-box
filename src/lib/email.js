@@ -1,11 +1,15 @@
-const DEFAULT_RESEND_ENDPOINT = "https://api.resend.com/emails";
+import nodemailer from "nodemailer";
 
-function getEmailConfig() {
-  return {
-    apiKey: process.env.RESEND_API_KEY || process.env.EMAIL_API_KEY || "",
-    endpoint: process.env.EMAIL_API_URL || DEFAULT_RESEND_ENDPOINT,
-    from: process.env.EMAIL_FROM || "Vyntra <onboarding@resend.dev>",
-  };
+function getTransporter() {
+  return nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT) || 587,
+    secure: process.env.SMTP_SECURE === "true",
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+  });
 }
 
 function normalizeRecipients(to) {
@@ -40,56 +44,54 @@ export async function sendEmail({ to, subject, text, html }) {
     return { ok: false, skipped: true, reason: "missing_email_fields" };
   }
 
-  const { apiKey, endpoint, from } = getEmailConfig();
+  const from = process.env.EMAIL_FROM || "Vyntra <noreply@vyntra.app>";
   const maskedRecipients = recipients.map(maskEmail);
 
   console.info("Email send attempt.", {
     to: maskedRecipients,
     subject,
-    endpoint,
     from,
-    hasResendApiKey: Boolean(process.env.RESEND_API_KEY),
-    hasEmailApiKey: Boolean(process.env.EMAIL_API_KEY),
+    smtpHost: process.env.SMTP_HOST || "",
+    smtpPort: process.env.SMTP_PORT || "",
+    hasSmtpUser: Boolean(process.env.SMTP_USER),
+    hasSmtpPass: Boolean(process.env.SMTP_PASS),
+    hasEmailFrom: Boolean(process.env.EMAIL_FROM),
   });
 
-  if (!apiKey) {
-    console.warn("Email not sent: missing RESEND_API_KEY or EMAIL_API_KEY.");
-    return { ok: false, skipped: true, reason: "missing_api_key" };
+  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    console.warn("Email not sent: missing SMTP configuration.", {
+      hasSmtpHost: Boolean(process.env.SMTP_HOST),
+      hasSmtpUser: Boolean(process.env.SMTP_USER),
+      hasSmtpPass: Boolean(process.env.SMTP_PASS),
+    });
+    return { ok: false, skipped: true, reason: "missing_smtp_config" };
   }
 
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
+  try {
+    const transporter = getTransporter();
+
+    const info = await transporter.sendMail({
       from,
-      to: recipients,
+      to: recipients.join(", "),
       subject,
       text,
       html,
-    }),
-  });
+    });
 
-  if (!response.ok) {
-    const errorText = await response.text();
+    console.info("Email sent successfully.", {
+      to: maskedRecipients,
+      subject,
+      messageId: info.messageId || null,
+    });
+
+    return { ok: true, data: { messageId: info.messageId } };
+  } catch (error) {
     console.error("Email send failed.", {
       to: maskedRecipients,
       subject,
-      status: response.status,
-      response: errorText,
+      message: error?.message || String(error),
+      code: error?.code || "",
     });
-    throw new Error(errorText || "Unable to send email");
+    throw error;
   }
-
-  const data = await response.json().catch(() => null);
-
-  console.info("Email sent successfully.", {
-    to: maskedRecipients,
-    subject,
-    resendId: data?.id || null,
-  });
-
-  return { ok: true, data };
 }

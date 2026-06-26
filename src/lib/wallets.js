@@ -30,32 +30,55 @@ export async function creditPendingRentForBooking(booking) {
 export async function releasePendingRentForBooking(booking) {
   const ownerId = booking?.owner;
   const rentAmount = getRentAmount(booking);
+  const bookingId = booking?._id ? String(booking._id) : "";
 
   if (!ownerId || rentAmount <= 0) {
+    console.warn("Wallet settlement skipped: missing owner or rent amount.", {
+      bookingId,
+      ownerId: ownerId ? String(ownerId) : "",
+      totalRent: rentAmount,
+    });
     return null;
   }
 
-  return Wallet.findOneAndUpdate(
+  const beforeWallet = await Wallet.findOne({ owner: ownerId }).lean();
+
+  console.info("Wallet settlement starting.", {
+    bookingId,
+    ownerId: String(ownerId),
+    totalRent: rentAmount,
+    before: {
+      availableBalance: Number(beforeWallet?.availableBalance || 0),
+      pendingBalance: Number(beforeWallet?.pendingBalance || 0),
+      totalEarned: Number(beforeWallet?.totalEarned || 0),
+    },
+  });
+
+  const wallet = await Wallet.findOneAndUpdate(
     { owner: ownerId },
-    [
-      {
-        $set: {
-          owner: ownerId,
-          pendingBalance: {
-            $max: [
-              0,
-              { $subtract: [{ $ifNull: ["$pendingBalance", 0] }, rentAmount] },
-            ],
-          },
-          availableBalance: {
-            $add: [{ $ifNull: ["$availableBalance", 0] }, rentAmount],
-          },
-          totalEarned: {
-            $add: [{ $ifNull: ["$totalEarned", 0] }, rentAmount],
-          },
-        },
+    {
+      $inc: {
+        pendingBalance: -rentAmount,
+        availableBalance: rentAmount,
+        totalEarned: rentAmount,
       },
-    ],
+      $setOnInsert: {
+        owner: ownerId,
+      },
+    },
     { upsert: true, new: true, setDefaultsOnInsert: true },
   );
+
+  console.info("Wallet settlement completed.", {
+    bookingId,
+    ownerId: String(ownerId),
+    totalRent: rentAmount,
+    after: {
+      availableBalance: Number(wallet?.availableBalance || 0),
+      pendingBalance: Number(wallet?.pendingBalance || 0),
+      totalEarned: Number(wallet?.totalEarned || 0),
+    },
+  });
+
+  return wallet;
 }
