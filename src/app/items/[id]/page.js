@@ -47,48 +47,95 @@ export default async function ItemDetailPage({ params }) {
             <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
                 <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
                     <section className="space-y-4">
-                        <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-primary via-primary/90 to-accent shadow-lg">
-                            <div className="relative grid min-h-80 gap-4 p-5 text-bg sm:min-h-104 sm:p-6">
-                                {heroImage ? (
-                                    // eslint-disable-next-line @next/next/no-img-element
-                                    <img
-                                        src={heroImage}
-                                        alt={item.title}
-                                        className="absolute inset-0 h-full w-full object-cover"
-                                    />
-                                ) : null}
-                                <div className="absolute inset-0 " />
+                        {/* ------------ */}
+                        <div className="relative overflow-hidden rounded-3xl shadow-xl">
+                            {/* Background Image */}
+                            {heroImage && (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                    src={heroImage}
+                                    alt={item.title}
+                                    className="absolute inset-0 h-full w-full object-cover brightness-[0.9]"
+                                />
+                            )}
 
-                                <div className="relative flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-bg/85">
-                                    <span className="rounded-full bg-bg/15 px-3 py-1">{item.category}</span>
-                                    <span className="rounded-full bg-bg/15 px-3 py-1">{item.itemType}</span>
-                                    <span className={`rounded-full px-3 py-1 ${item.availability?.isAvailable ? "bg-emerald-400/20 text-emerald-100" : "bg-rose-400/20 text-rose-100"}`}>
-                                        {item.availability?.isAvailable ? "Available" : "Not Available"}
+                            {/* Overlay */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/25 to-transparent" />
+
+                            {/* Content */}
+                            <div className="relative flex min-h-[450px] flex-col justify-between p-6 text-white sm:min-h-[500px] sm:p-8">
+                                {/* Badges */}
+                                <div className="flex flex-wrap gap-3">
+                                    <span className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-wider backdrop-blur-md">
+                                        {item.category}
+                                    </span>
+
+                                    <span className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-wider backdrop-blur-md">
+                                        {item.itemType}
+                                    </span>
+
+                                    <span
+                                        className={`rounded-full px-4 py-2 text-xs font-semibold backdrop-blur-md ${item.availability?.isAvailable
+                                                ? "border border-emerald-300/30 bg-emerald-500/20 text-emerald-100"
+                                                : "border border-red-300/30 bg-red-500/20 text-red-100"
+                                            }`}
+                                    >
+                                        ●{" "}
+                                        {item.availability?.isAvailable
+                                            ? "Available"
+                                            : "Not Available"}
                                     </span>
                                 </div>
 
-                                <div className="relative mt-auto max-w-2xl space-y-3">
-                                    <h1 className="text-3xl font-semibold leading-tight sm:text-5xl">{item.title}</h1>
-                                    <p className="text-sm text-bg/85 sm:text-base">{item.description}</p>
+                                {/* Main Content */}
+                                <div className="max-w-xl space-y-4">
+                                    <h1 className="text-5xl font-bold leading-tight sm:text-6xl">
+                                        {item.title}
+                                    </h1>
+
+                                    <p className="text-base text-white/85 sm:text-lg">
+                                        {item.description}
+                                    </p>
+
+                                    {/* Main Price */}
+                                    <div className="flex items-end gap-3 pt-2">
+                                        <span className="text-5xl font-bold">
+                                            ₹{item.pricePerDay || 0}
+                                        </span>
+
+                                        <span className="pb-2 text-xl text-white/80">
+                                            per day
+                                        </span>
+                                    </div>
                                 </div>
 
-                                <div className="relative grid gap-3 sm:grid-cols-3">
-                                    <div className="rounded-2xl bg-bg/15 p-3 backdrop-blur">
-                                        <p className="text-xs text-bg/85">Deposit Amount</p>
-                                        <p className="text-lg font-semibold">Rs.{item.depositAmount || 0}</p>
+                                {/* Bottom Cards */}
+                                <div className="mt-8 flex flex-wrap gap-4">
+                                    <div className="rounded-2xl border border-white/15 bg-white/10 px-5 py-4 backdrop-blur-xl">
+                                        <p className="text-xs uppercase tracking-wider text-white/70">
+                                            Deposit
+                                        </p>
+
+                                        <p className="mt-1 text-2xl font-bold">
+                                            ₹{item.depositAmount || 0}
+                                        </p>
                                     </div>
-                                    <div className="rounded-2xl bg-bg/15 p-3 backdrop-blur">
-                                        <p className="text-xs text-bg/85">Price / Day</p>
-                                        <p className="text-lg font-semibold">Rs.{item.pricePerDay || 0}</p>
-                                    </div>
-                                    <div className="rounded-2xl bg-bg/15 p-3 backdrop-blur">
-                                        <p className="text-xs text-bg/85">Price / Hour</p>
-                                        <p className="text-lg font-semibold">Rs.{item.pricePerHour || 0}</p>
-                                    </div>
+
+                                    {item.pricePerHour > 0 && (
+                                        <div className="rounded-2xl border border-white/15 bg-white/10 px-5 py-4 backdrop-blur-xl">
+                                            <p className="text-xs uppercase tracking-wider text-white/70">
+                                                Price / Hour
+                                            </p>
+
+                                            <p className="mt-1 text-2xl font-bold">
+                                                ₹{item.pricePerHour}
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
-
+                        {/* ------------------------------------------ */}
                         <div className="grid grid-cols-4 gap-3">
                             {(galleryImages.length ? galleryImages : images.length ? [heroImage] : ["", "", "", ""]).map((thumb, index) => (
                                 <div
@@ -192,7 +239,19 @@ export default async function ItemDetailPage({ params }) {
                             itemId={String(item._id)}
                             dailyPrice={item.pricePerDay || 0}
                             depositAmount={item.depositAmount || 0}
-                            currentBooking={currentBooking}
+                            currentBooking={
+                                currentBooking
+                                    ? {
+                                        _id: String(currentBooking._id),
+                                        bookingStatus: currentBooking.bookingStatus,
+                                        paymentStatus: currentBooking.paymentStatus,
+                                        startDate:
+                                            currentBooking.startDate?.toISOString?.() ?? null,
+                                        endDate:
+                                            currentBooking.endDate?.toISOString?.() ?? null,
+                                    }
+                                    : null
+                            }
                             isItemOutOfStock={!canBook && !currentBooking}
                             isOwnedByCurrentUser={isOwnedByCurrentUser}
                         />
