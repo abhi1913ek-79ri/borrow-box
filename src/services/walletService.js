@@ -22,7 +22,8 @@ export async function getWallet() {
             availableBalance: 0,
             pendingBalance: 0,
             totalEarned: 0,
+            lockedDeposits: 0,
+            releasedDeposits: 0,
         },
-        transactions: Array.isArray(data.transactions) ? data.transactions : [],
     };
 }

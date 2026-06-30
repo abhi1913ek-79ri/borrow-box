@@ -10,6 +10,8 @@ import { authOptions } from "@/lib/auth";
 import Booking from "@/models/Booking";
 import Item from "@/models/Item";
 
+const ACTIVE_BOOKING_STATUSES = ["paid", "owner_accepted", "in_transit", "delivered", "return_initiated"];
+
 async function FeaturedItemsSection() {
   await connectDB();
 
@@ -19,7 +21,7 @@ async function FeaturedItemsSection() {
     session?.user?.id
       ? Booking.find({
           renter: session.user.id,
-          bookingStatus: { $in: ["paid", "owner_accepted", "in_transit", "delivered", "return_initiated", "confirmed", "completed"] },
+          bookingStatus: { $in: ACTIVE_BOOKING_STATUSES },
         })
           .select("item")
           .lean()

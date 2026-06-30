@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import Button from "@/components/Button";
 import Navbar from "@/components/Navbar";
 import GoogleAuthModal from "@/components/GoogleAuthModal";
-import Loader from "@/components/Loader";
 import AddItemForm from "@/components/AddItemForm";
+import AddItemSkeleton from "@/components/AddItemSkeleton";
 
 export default function AddItemAccessPage() {
     const { status } = useSession();
@@ -20,13 +20,7 @@ export default function AddItemAccessPage() {
 
             <main className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
                 {status === "loading" ? (
-                    <section className="space-y-4">
-                        <div className="theme-card rounded-3xl border border-accent/20 bg-card p-6 shadow-sm">
-                            <h1 className="text-2xl font-semibold text-text">Loading your workspace</h1>
-                            <p className="mt-2 text-sm text-text/70">Checking your session before opening the listing form.</p>
-                        </div>
-                        <Loader count={2} />
-                    </section>
+                    <AddItemSkeleton showShell={false} />
                 ) : status === "authenticated" ? (
                     <section className="space-y-6">
                         <div className="theme-card rounded-3xl border border-accent/20 bg-card p-6 shadow-sm">

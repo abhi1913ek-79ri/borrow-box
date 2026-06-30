@@ -18,9 +18,9 @@ export async function GET() {
     const notifications = await Notification.find({ user: session.user.id })
       .populate({
         path: "booking",
-        select: "item renter startDate endDate totalPrice amountPayable bookingStatus",
+        select: "item owner renter startDate endDate totalPrice amountPayable bookingStatus",
         populate: [
-          { path: "item", select: "title images" },
+          { path: "item", select: "title images owner" },
           { path: "renter", select: "name" },
         ],
       })

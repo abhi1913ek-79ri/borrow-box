@@ -5,7 +5,7 @@ export const TRANSACTION_TYPES = {
   DEPOSIT_REFUND: "DEPOSIT_REFUND",
 };
 
-export async function createTransaction({ bookingId, userId, amount, type, status = "COMPLETED", createdAt = new Date() }) {
+export async function createTransaction({ bookingId, userId, ownerId, amount, type, status = "COMPLETED", createdAt = new Date() }) {
   const normalizedAmount = Math.max(0, Number(amount || 0));
 
   if (!bookingId || !userId || !type || normalizedAmount <= 0) {
@@ -22,6 +22,7 @@ export async function createTransaction({ bookingId, userId, amount, type, statu
       $setOnInsert: {
         booking: bookingId,
         user: userId,
+        owner: ownerId,
         amount: normalizedAmount,
         type,
         status,

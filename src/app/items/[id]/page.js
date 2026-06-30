@@ -7,6 +7,8 @@ import { authOptions } from "@/lib/auth";
 import Booking from "@/models/Booking";
 import Item from "@/models/Item";
 
+const ACTIVE_BOOKING_STATUSES = ["paid", "owner_accepted", "in_transit", "delivered", "return_initiated"];
+
 export default async function ItemDetailPage({ params }) {
     await connectDB();
 
@@ -23,7 +25,7 @@ export default async function ItemDetailPage({ params }) {
         ? await Booking.findOne({
             item: item._id,
             renter: session.user.id,
-            bookingStatus: { $in: ["paid", "owner_accepted", "in_transit", "delivered", "return_initiated", "confirmed", "completed"] },
+            bookingStatus: { $in: ACTIVE_BOOKING_STATUSES },
         }).lean()
         : null;
 

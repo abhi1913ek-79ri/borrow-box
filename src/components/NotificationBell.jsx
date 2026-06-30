@@ -3,11 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import {
-  acceptBooking,
   getNotifications,
   markNotificationAsRead,
-  rejectBooking,
 } from "@/services/notificationService";
+import OwnerBookingActions, {
+  canManageBooking,
+  mergeOwnerBookingUpdate,
+  OWNER_BOOKING_STATUS_UPDATED,
+} from "@/components/OwnerBookingActions";
 
 function formatNotificationTime(createdAt) {
   if (!createdAt) {
@@ -58,7 +61,8 @@ function formatCurrency(amount) {
 }
 
 export default function NotificationBell() {
-  const { status } = useSession();
+  const { data: session, status } = useSession();
+  const currentUserId = session?.user?.id || "";
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -185,6 +189,35 @@ export default function NotificationBell() {
     };
   }, []);
 
+  useEffect(() => {
+    const handleOwnerBookingStatusUpdate = (event) => {
+      const updatedBooking = event.detail?.booking;
+
+      if (!updatedBooking) {
+        return;
+      }
+
+      setNotifications((currentNotifications) =>
+        currentNotifications.map((currentNotification) => {
+          if (!currentNotification.booking) {
+            return currentNotification;
+          }
+
+          return {
+            ...currentNotification,
+            booking: mergeOwnerBookingUpdate(currentNotification.booking, updatedBooking),
+          };
+        }),
+      );
+    };
+
+    window.addEventListener(OWNER_BOOKING_STATUS_UPDATED, handleOwnerBookingStatusUpdate);
+
+    return () => {
+      window.removeEventListener(OWNER_BOOKING_STATUS_UPDATED, handleOwnerBookingStatusUpdate);
+    };
+  }, []);
+
   const handleNotificationClick = async (notification) => {
     if (notification.isRead) {
       return;
@@ -214,24 +247,26 @@ export default function NotificationBell() {
     }
   };
 
-  const handleBookingAction = async (event, notification, action) => {
-    event.stopPropagation();
+  const handleBookingActionLoadingChange = (notificationId, action) => {
+    setActionLoadingKey(action ? `${notificationId}:${action}` : "");
+  };
 
-    if (!notification.booking?.id) {
-      return;
-    }
+  const handleBookingActionComplete = (notification, updatedBooking) => {
+    setError("");
+    setNotifications((currentNotifications) =>
+      currentNotifications.map((currentNotification) => {
+        if (!currentNotification.booking) {
+          return currentNotification;
+        }
 
-    const actionKey = `${notification.id}:${action}`;
+        const updatedBookingId = updatedBooking?._id || updatedBooking?.id;
+        const notificationBookingId = currentNotification.booking.id || currentNotification.booking._id;
+        const isSameBooking = String(updatedBookingId || "") === String(notificationBookingId || "");
+        const isClickedNotification = currentNotification.id === notification.id;
 
-    try {
-      setActionLoadingKey(actionKey);
-      setError("");
-
-      const updatedBooking = action === "accept"
-        ? await acceptBooking(notification.booking.id)
-        : await rejectBooking(notification.booking.id);
-      const updatedStatus = updatedBooking?.bookingStatus
-        || (action === "accept" ? "owner_accepted" : "owner_rejected");
+        if (!isSameBooking && !isClickedNotification) {
+          return currentNotification;
+        }
 
       setNotifications((currentNotifications) =>
         currentNotifications.map((currentNotification) =>
@@ -248,14 +283,13 @@ export default function NotificationBell() {
         ),
       );
 
-      if (!notification.isRead) {
-        setUnreadCount((currentCount) => Math.max(0, currentCount - 1));
-      }
-    } catch (actionError) {
-      setError(actionError.message || "Unable to update booking");
-    } finally {
-      setActionLoadingKey("");
+    if (!notification.isRead) {
+      setUnreadCount((currentCount) => Math.max(0, currentCount - 1));
     }
+  };
+
+  const handleBookingActionError = (actionError) => {
+    setError(actionError.message || "Unable to update booking");
   };
 
   if (status !== "authenticated") {
