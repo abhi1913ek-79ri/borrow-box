@@ -11,6 +11,7 @@ import OwnerBookingActions, {
   mergeOwnerBookingUpdate,
   OWNER_BOOKING_STATUS_UPDATED,
 } from "@/components/OwnerBookingActions";
+import { performOwnerBookingAction } from "@/services/bookingService";
 
 function formatNotificationTime(createdAt) {
   if (!createdAt) {
@@ -155,6 +156,19 @@ export default function NotificationBell() {
   }, [isOpen, status]);
 
   useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
     const handlePointerDown = (event) => {
       if (!menuRef.current?.contains(event.target)) {
         setIsOpen(false);
@@ -240,26 +254,28 @@ export default function NotificationBell() {
 
   const handleBookingActionComplete = (notification, updatedBooking) => {
     setError("");
+
+    const updatedStatus = updatedBooking?.status;
+
     setNotifications((currentNotifications) =>
       currentNotifications.map((currentNotification) => {
-        if (!currentNotification.booking) {
-          return currentNotification;
-        }
+        // If notification has no booking, leave it alone
+        if (!currentNotification.booking) return currentNotification;
 
         const updatedBookingId = updatedBooking?._id || updatedBooking?.id;
         const notificationBookingId = currentNotification.booking.id || currentNotification.booking._id;
         const isSameBooking = String(updatedBookingId || "") === String(notificationBookingId || "");
         const isClickedNotification = currentNotification.id === notification.id;
 
-        if (!isSameBooking && !isClickedNotification) {
-          return currentNotification;
-        }
+        if (!isSameBooking && !isClickedNotification) return currentNotification;
 
         return {
           ...currentNotification,
-          isRead: isClickedNotification ? true : currentNotification.isRead,
+          isRead: currentNotification.id === notification.id ? true : currentNotification.isRead,
           actionTaken: isClickedNotification ? true : currentNotification.actionTaken,
-          booking: mergeOwnerBookingUpdate(currentNotification.booking, updatedBooking),
+          booking: currentNotification.booking
+            ? { ...currentNotification.booking, ...(updatedStatus ? { status: updatedStatus } : {}) }
+            : currentNotification.booking,
         };
       }),
     );
@@ -267,10 +283,31 @@ export default function NotificationBell() {
     if (!notification.isRead) {
       setUnreadCount((currentCount) => Math.max(0, currentCount - 1));
     }
+    setActionLoadingKey("");
   };
 
   const handleBookingActionError = (actionError) => {
-    setError(actionError.message || "Unable to update booking");
+    setError(actionError?.message || "Unable to update booking");
+    setActionLoadingKey("");
+  };
+
+  const handleBookingAction = async (event, notification, action) => {
+    event?.stopPropagation?.();
+    if (!notification?.booking) return;
+
+    const bookingId = notification.booking._id || notification.booking.id;
+    if (!bookingId) {
+      handleBookingActionError(new Error("Invalid booking id"));
+      return;
+    }
+
+    try {
+      handleBookingActionLoadingChange(notification.id, action);
+      const updatedBooking = await performOwnerBookingAction(bookingId, action);
+      handleBookingActionComplete(notification, updatedBooking);
+    } catch (err) {
+      handleBookingActionError(err);
+    }
   };
 
   if (status !== "authenticated") {
@@ -300,127 +337,160 @@ export default function NotificationBell() {
       </button>
 
       {isOpen ? (
-        <div className="absolute right-0 top-[calc(100%+0.5rem)] z-50 w-[min(92vw,24rem)] overflow-hidden rounded-2xl border border-accent/20 bg-card shadow-xl shadow-black/10">
-          <div className="flex items-center justify-between border-b border-accent/10 px-4 py-3">
-            <div>
-              <p className="text-sm font-semibold text-text">Notifications</p>
-              <p className="text-xs text-text/60">Latest updates from your account</p>
+        <div
+          className="fixed inset-0 z-50 bg-black/40 md:absolute md:inset-auto md:right-0 md:top-[calc(100%+0.5rem)] md:bg-transparent"
+          onClick={() => setIsOpen(false)}
+        >
+          <div
+            className="flex h-screen w-screen flex-col overflow-hidden rounded-none border-0 bg-card shadow-xl shadow-black/10 md:h-auto md:max-h-96 md:w-[min(92vw,24rem)] md:rounded-2xl md:border md:border-accent/20 md:shadow-xl"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Notifications"
+          >
+            <div className="flex items-center justify-between gap-3 border-b border-accent/10 px-4 py-4 pt-[calc(env(safe-area-inset-top)+1rem)] md:pt-3">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-text">Notifications</p>
+                <p className="text-xs text-text/60">Latest updates from your account</p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {unreadCount > 0 ? (
+                  <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
+                    {unreadCount} unread
+                  </span>
+                ) : null}
+
+                <button
+                  type="button"
+                  onClick={() => setIsOpen(false)}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-accent/15 bg-bg/70 text-text/70 transition hover:bg-accent/10 hover:text-text"
+                  aria-label="Close notifications"
+                >
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M18 6 6 18" />
+                    <path d="m6 6 12 12" />
+                  </svg>
+                </button>
+              </div>
             </div>
-            {unreadCount > 0 ? (
-              <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
-                {unreadCount} unread
-              </span>
-            ) : null}
-          </div>
 
-          <div className="max-h-96 overflow-y-auto">
-            {isLoading ? (
-              <div className="px-4 py-6 text-sm text-text/60">Loading notifications...</div>
-            ) : error ? (
-              <div className="px-4 py-6 text-sm text-red-500">{error}</div>
-            ) : notifications.length === 0 ? (
-              <div className="px-4 py-6 text-sm text-text/60">No notifications yet.</div>
-            ) : (
-              <div className="divide-y divide-accent/10">
-                {notifications.map((notification) => {
-                  const booking = notification.booking;
-                  const bookingStatus = booking?.status;
-                  const showAcceptedBadge = ["owner_accepted", "in_transit", "delivered"].includes(bookingStatus);
-                  const showRejectedBadge = bookingStatus === "owner_rejected";
-                  const currentActionLoading = actionLoadingKey.startsWith(`${notification.id}:`)
-                    ? actionLoadingKey.split(":")[1]
-                    : "";
+            <div className="flex-1 overflow-y-auto pb-[calc(env(safe-area-inset-bottom)+1rem)] md:max-h-96 md:pb-0">
+              {isLoading ? (
+                <div className="px-4 py-6 text-sm text-text/60">Loading notifications...</div>
+              ) : error ? (
+                <div className="px-4 py-6 text-sm text-red-500">{error}</div>
+              ) : notifications.length === 0 ? (
+                <div className="px-4 py-6 text-sm text-text/60">No notifications yet.</div>
+              ) : (
+                <div className="divide-y divide-accent/10">
+                  {notifications.map((notification) => {
+                    const booking = notification.booking;
+                    const bookingStatus = booking?.status;
+                    const canTakeBookingAction = bookingStatus === "paid" && !notification.actionTaken;
+                    const isAccepting = actionLoadingKey === `${notification.id}:accept`;
+                    const isRejecting = actionLoadingKey === `${notification.id}:reject`;
+                    const showAcceptedBadge = ["owner_accepted", "in_transit", "delivered"].includes(bookingStatus);
+                    const showRejectedBadge = bookingStatus === "owner_rejected";
 
-                  return (
-                    <div
-                      key={notification.id}
-                      onClick={() => handleNotificationClick(notification)}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter" || event.key === " ") {
-                          handleNotificationClick(notification);
-                        }
-                      }}
-                      role="button"
-                      tabIndex={0}
-                      className={`block w-full px-4 py-3 text-left transition hover:bg-accent/5 ${
-                        notification.isRead ? "bg-transparent" : "bg-primary/5"
-                      }`}
-                    >
-                      <div className="flex items-start gap-3">
-                        <span
-                          className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${
-                            notification.isRead ? "bg-text/20" : "bg-primary"
+                    return (
+                      <div
+                        key={notification.id}
+                        onClick={() => handleNotificationClick(notification)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            handleNotificationClick(notification);
+                          }
+                        }}
+                        role="button"
+                        tabIndex={0}
+                        className={`block w-full px-4 py-3 text-left transition hover:bg-accent/5 ${notification.isRead ? "bg-transparent" : "bg-primary/5"
                           }`}
-                        />
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-start justify-between gap-3">
-                            <p className="text-sm font-semibold text-text">{notification.title}</p>
-                            <span className="shrink-0 text-[11px] text-text/50">
-                              {formatNotificationTime(notification.createdAt)}
-                            </span>
-                          </div>
-                          <p className="mt-1 text-sm text-text/70">{notification.message}</p>
-
-                          {booking ? (
-                            <div className="mt-3 overflow-hidden rounded-xl border border-accent/15 bg-bg/70">
-                              <div className="grid gap-3 p-3 sm:grid-cols-[72px_1fr]">
-                                <div className="h-20 overflow-hidden rounded-lg bg-card">
-                                  {booking.itemImage ? (
-                                    // eslint-disable-next-line @next/next/no-img-element
-                                    <img
-                                      src={booking.itemImage}
-                                      alt={booking.itemName}
-                                      className="h-full w-full object-cover"
-                                    />
-                                  ) : (
-                                    <div className="grid h-full place-items-center text-xs font-semibold text-text/45">
-                                      No image
-                                    </div>
-                                  )}
-                                </div>
-
-                                <div className="min-w-0 space-y-2">
-                                  <div className="flex flex-wrap items-start justify-between gap-2">
-                                    <p className="truncate text-sm font-semibold text-text">{booking.itemName}</p>
-                                    {showAcceptedBadge ? (
-                                      <span className="rounded-full bg-emerald-100 px-2 py-1 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
-                                        Delivery Process Started
-                                      </span>
-                                    ) : null}
-                                    {showRejectedBadge ? (
-                                      <span className="rounded-full bg-rose-100 px-2 py-1 text-[11px] font-semibold text-rose-700 dark:bg-rose-900/40 dark:text-rose-300">
-                                        Rejected
-                                      </span>
-                                    ) : null}
-                                  </div>
-                                  <div className="grid gap-1 text-xs text-text/65">
-                                    <span>{formatDateRange(booking.startDate, booking.endDate)}</span>
-                                    <span>{formatCurrency(booking.amount)}</span>
-                                    <span>Renter: {booking.renterName}</span>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {canManageBooking(currentUserId, booking) ? (
-                                <OwnerBookingActions
-                                  booking={booking}
-                                  size="sm"
-                                  disabled={Boolean(actionLoadingKey)}
-                                  loadingAction={currentActionLoading}
-                                  onLoadingActionChange={(action) => handleBookingActionLoadingChange(notification.id, action)}
-                                  onActionComplete={(updatedBooking) => handleBookingActionComplete(notification, updatedBooking)}
-                                  onActionError={handleBookingActionError}
-                                />
-                              ) : null}
+                      >
+                        <div className="flex items-start gap-3">
+                          <span
+                            className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${notification.isRead ? "bg-text/20" : "bg-primary"
+                              }`}
+                          />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-start justify-between gap-3">
+                              <p className="text-sm font-semibold text-text">{notification.title}</p>
+                              <span className="shrink-0 text-[11px] text-text/50">
+                                {formatNotificationTime(notification.createdAt)}
+                              </span>
                             </div>
-                          ) : null}
+                            <p className="mt-1 text-sm text-text/70">{notification.message}</p>
+
+                            {booking ? (
+                              <div className="mt-3 overflow-hidden rounded-xl border border-accent/15 bg-bg/70">
+                                <div className="grid gap-3 p-3 sm:grid-cols-[72px_1fr]">
+                                  <div className="h-20 overflow-hidden rounded-lg bg-card">
+                                    {booking.itemImage ? (
+                                      // eslint-disable-next-line @next/next/no-img-element
+                                      <img
+                                        src={booking.itemImage}
+                                        alt={booking.itemName}
+                                        className="h-full w-full object-cover"
+                                      />
+                                    ) : (
+                                      <div className="grid h-full place-items-center text-xs font-semibold text-text/45">
+                                        No image
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  <div className="min-w-0 space-y-2">
+                                    <div className="flex flex-wrap items-start justify-between gap-2">
+                                      <p className="truncate text-sm font-semibold text-text">{booking.itemName}</p>
+                                      {showAcceptedBadge ? (
+                                        <span className="rounded-full bg-emerald-100 px-2 py-1 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+                                          Delivery Process Started
+                                        </span>
+                                      ) : null}
+                                      {showRejectedBadge ? (
+                                        <span className="rounded-full bg-rose-100 px-2 py-1 text-[11px] font-semibold text-rose-700 dark:bg-rose-900/40 dark:text-rose-300">
+                                          Rejected
+                                        </span>
+                                      ) : null}
+                                    </div>
+                                    <div className="grid gap-1 text-xs text-text/65">
+                                      <span>{formatDateRange(booking.startDate, booking.endDate)}</span>
+                                      <span>{formatCurrency(booking.amount)}</span>
+                                      <span>Renter: {booking.renterName}</span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {canTakeBookingAction ? (
+                                  <div className="grid grid-cols-2 gap-2 border-t border-accent/10 p-3">
+                                    <button
+                                      type="button"
+                                      disabled={Boolean(actionLoadingKey)}
+                                      onClick={(event) => handleBookingAction(event, notification, "accept")}
+                                      className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                                    >
+                                      {isAccepting ? "Confirming..." : "✓ Confirm Booking"}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={Boolean(actionLoadingKey)}
+                                      onClick={(event) => handleBookingAction(event, notification, "reject")}
+                                      className="rounded-lg bg-rose-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+                                    >
+                                      {isRejecting ? "Rejecting..." : "✕ Reject Booking"}
+                                    </button>
+                                  </div>
+                                ) : null}
+                              </div>
+                            ) : null}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       ) : null}
