@@ -11,6 +11,7 @@ import OwnerBookingActions, {
   mergeOwnerBookingUpdate,
   OWNER_BOOKING_STATUS_UPDATED,
 } from "@/components/OwnerBookingActions";
+import { performOwnerBookingAction } from "@/services/bookingService";
 
 function formatNotificationTime(createdAt) {
   if (!createdAt) {
@@ -253,43 +254,60 @@ export default function NotificationBell() {
 
   const handleBookingActionComplete = (notification, updatedBooking) => {
     setError("");
+
+    const updatedStatus = updatedBooking?.status;
+
     setNotifications((currentNotifications) =>
       currentNotifications.map((currentNotification) => {
-        if (!currentNotification.booking) {
-          return currentNotification;
-        }
+        // If notification has no booking, leave it alone
+        if (!currentNotification.booking) return currentNotification;
 
         const updatedBookingId = updatedBooking?._id || updatedBooking?.id;
         const notificationBookingId = currentNotification.booking.id || currentNotification.booking._id;
         const isSameBooking = String(updatedBookingId || "") === String(notificationBookingId || "");
         const isClickedNotification = currentNotification.id === notification.id;
 
-        if (!isSameBooking && !isClickedNotification) {
-          return currentNotification;
-        }
+        if (!isSameBooking && !isClickedNotification) return currentNotification;
 
-      setNotifications((currentNotifications) =>
-        currentNotifications.map((currentNotification) =>
-          currentNotification.id === notification.id
-            ? {
-              ...currentNotification,
-              isRead: true,
-              actionTaken: true,
-              booking: currentNotification.booking
-                ? { ...currentNotification.booking, status: updatedStatus }
-                : currentNotification.booking,
-            }
-            : currentNotification,
-        ),
-      );
+        return {
+          ...currentNotification,
+          isRead: currentNotification.id === notification.id ? true : currentNotification.isRead,
+          actionTaken: isClickedNotification ? true : currentNotification.actionTaken,
+          booking: currentNotification.booking
+            ? { ...currentNotification.booking, ...(updatedStatus ? { status: updatedStatus } : {}) }
+            : currentNotification.booking,
+        };
+      }),
+    );
 
     if (!notification.isRead) {
       setUnreadCount((currentCount) => Math.max(0, currentCount - 1));
     }
+    setActionLoadingKey("");
   };
 
   const handleBookingActionError = (actionError) => {
-    setError(actionError.message || "Unable to update booking");
+    setError(actionError?.message || "Unable to update booking");
+    setActionLoadingKey("");
+  };
+
+  const handleBookingAction = async (event, notification, action) => {
+    event?.stopPropagation?.();
+    if (!notification?.booking) return;
+
+    const bookingId = notification.booking._id || notification.booking.id;
+    if (!bookingId) {
+      handleBookingActionError(new Error("Invalid booking id"));
+      return;
+    }
+
+    try {
+      handleBookingActionLoadingChange(notification.id, action);
+      const updatedBooking = await performOwnerBookingAction(bookingId, action);
+      handleBookingActionComplete(notification, updatedBooking);
+    } catch (err) {
+      handleBookingActionError(err);
+    }
   };
 
   if (status !== "authenticated") {
