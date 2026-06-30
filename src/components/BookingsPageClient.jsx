@@ -269,7 +269,7 @@ function BookingCard({
                         </div>
                         <div className="rounded-2xl bg-bg/80 p-3">
                             <p className="text-xs uppercase tracking-wide text-text/60">Price</p>
-                                <p className="mt-1 text-sm font-medium text-text">${booking.totalPrice}</p>
+                                <p className="mt-1 text-sm font-medium text-text">Rs. {booking.totalPrice}</p>
                         </div>
                         <div className="rounded-2xl bg-bg/80 p-3">
                             <p className="text-xs uppercase tracking-wide text-text/60">Owner</p>
