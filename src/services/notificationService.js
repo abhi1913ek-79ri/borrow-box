@@ -48,37 +48,3 @@ export async function markNotificationAsRead(notificationId) {
 
   return data.notification || null;
 }
-
-async function updateBookingApproval(bookingId, action) {
-  if (!bookingId) {
-    throw new Error("Invalid booking id");
-  }
-
-  const response = await fetch(`/api/bookings/${bookingId}/${action}`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    cache: "no-store",
-  });
-
-  const data = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    throw new Error(data.error || "Unable to update booking");
-  }
-
-  if (!data.success) {
-    throw new Error(data.error || "Unable to update booking");
-  }
-
-  return data.booking || null;
-}
-
-export function acceptBooking(bookingId) {
-  return updateBookingApproval(bookingId, "accept");
-}
-
-export function rejectBooking(bookingId) {
-  return updateBookingApproval(bookingId, "reject");
-}

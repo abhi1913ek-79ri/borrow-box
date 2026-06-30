@@ -24,6 +24,12 @@ export function serializeNotification(notification) {
           amount: Number(booking.amountPayable || booking.totalPrice || 0),
           renterName: renter?.name || "Unknown renter",
           status: booking.bookingStatus || "pending",
+          bookingStatus: booking.bookingStatus || "pending",
+          ownerId: booking.owner
+            ? (booking.owner._id || booking.owner).toString()
+            : item?.owner
+              ? (item.owner._id || item.owner).toString()
+              : null,
         }
       : null,
     title: notification.title || "",

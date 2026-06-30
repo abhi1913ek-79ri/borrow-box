@@ -6,6 +6,7 @@ const bookingSchema = new mongoose.Schema({
   renter: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   startDate: Date,
   endDate: Date,
+  totalRent: Number,
   totalPrice: Number,
   depositAmount: Number,
   amountPayable: Number,

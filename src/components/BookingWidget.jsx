@@ -26,6 +26,9 @@ function formatCurrency(amount) {
     return `Rs. ${Number(amount || 0).toLocaleString("en-IN")}`;
 }
 
+const ACTIVE_BOOKING_STATUSES = ["paid", "owner_accepted", "in_transit", "delivered", "return_initiated"];
+const CANCELLABLE_BOOKING_STATUSES = ["paid", "owner_accepted"];
+
 export default function BookingWidget({
     itemId,
     dailyPrice = 64,
@@ -61,10 +64,10 @@ export default function BookingWidget({
     const totalPrice = dailyPrice * dayCount;
     const payableNow = totalPrice + depositAmount;
     const hasActiveBooking = Boolean(
-        activeBooking && !["cancelled", "owner_rejected"].includes(activeBooking.bookingStatus)
+        activeBooking && ACTIVE_BOOKING_STATUSES.includes(activeBooking.bookingStatus)
     );
     const showCancelAction = Boolean(
-        activeBooking && !["cancelled", "owner_rejected", "in_transit", "delivered", "completed"].includes(activeBooking.bookingStatus)
+        activeBooking && CANCELLABLE_BOOKING_STATUSES.includes(activeBooking.bookingStatus)
     );
     const showOutOfStock = isItemOutOfStock && !hasActiveBooking && !isOwnedByCurrentUser;
     const isBookingDisabled = isSubmitting || showCancelAction || showOutOfStock;
@@ -113,7 +116,7 @@ export default function BookingWidget({
                 key: payment.keyId,
                 amount: payment.amount,
                 currency: payment.currency,
-                name: "Borrow Box",
+                name: "Vyntra",
                 description: payment.itemTitle,
                 order_id: payment.razorpayOrderId,
                 prefill: payment.prefill || {},
@@ -138,7 +141,7 @@ export default function BookingWidget({
             if (payment?.bookingId) {
                 const syncedBooking = await syncRazorpayBookingPayment({ bookingId: payment.bookingId });
 
-                if (["paid", "owner_accepted", "in_transit", "delivered"].includes(syncedBooking?.bookingStatus)) {
+                if (ACTIVE_BOOKING_STATUSES.includes(syncedBooking?.bookingStatus)) {
                     setStatusType("success");
                     setStatusMessage("Payment found in Razorpay. The owner can now confirm your booking.");
                     setActiveBooking({ _id: syncedBooking._id, bookingStatus: syncedBooking.bookingStatus });

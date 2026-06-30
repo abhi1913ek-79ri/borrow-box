@@ -3,11 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import {
-  acceptBooking,
   getNotifications,
   markNotificationAsRead,
-  rejectBooking,
 } from "@/services/notificationService";
+import OwnerBookingActions, {
+  canManageBooking,
+  mergeOwnerBookingUpdate,
+  OWNER_BOOKING_STATUS_UPDATED,
+} from "@/components/OwnerBookingActions";
 
 function formatNotificationTime(createdAt) {
   if (!createdAt) {
@@ -58,7 +61,8 @@ function formatCurrency(amount) {
 }
 
 export default function NotificationBell() {
-  const { status } = useSession();
+  const { data: session, status } = useSession();
+  const currentUserId = session?.user?.id || "";
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -172,6 +176,35 @@ export default function NotificationBell() {
     };
   }, []);
 
+  useEffect(() => {
+    const handleOwnerBookingStatusUpdate = (event) => {
+      const updatedBooking = event.detail?.booking;
+
+      if (!updatedBooking) {
+        return;
+      }
+
+      setNotifications((currentNotifications) =>
+        currentNotifications.map((currentNotification) => {
+          if (!currentNotification.booking) {
+            return currentNotification;
+          }
+
+          return {
+            ...currentNotification,
+            booking: mergeOwnerBookingUpdate(currentNotification.booking, updatedBooking),
+          };
+        }),
+      );
+    };
+
+    window.addEventListener(OWNER_BOOKING_STATUS_UPDATED, handleOwnerBookingStatusUpdate);
+
+    return () => {
+      window.removeEventListener(OWNER_BOOKING_STATUS_UPDATED, handleOwnerBookingStatusUpdate);
+    };
+  }, []);
+
   const handleNotificationClick = async (notification) => {
     if (notification.isRead) {
       return;
@@ -201,48 +234,43 @@ export default function NotificationBell() {
     }
   };
 
-  const handleBookingAction = async (event, notification, action) => {
-    event.stopPropagation();
+  const handleBookingActionLoadingChange = (notificationId, action) => {
+    setActionLoadingKey(action ? `${notificationId}:${action}` : "");
+  };
 
-    if (!notification.booking?.id) {
-      return;
+  const handleBookingActionComplete = (notification, updatedBooking) => {
+    setError("");
+    setNotifications((currentNotifications) =>
+      currentNotifications.map((currentNotification) => {
+        if (!currentNotification.booking) {
+          return currentNotification;
+        }
+
+        const updatedBookingId = updatedBooking?._id || updatedBooking?.id;
+        const notificationBookingId = currentNotification.booking.id || currentNotification.booking._id;
+        const isSameBooking = String(updatedBookingId || "") === String(notificationBookingId || "");
+        const isClickedNotification = currentNotification.id === notification.id;
+
+        if (!isSameBooking && !isClickedNotification) {
+          return currentNotification;
+        }
+
+        return {
+          ...currentNotification,
+          isRead: isClickedNotification ? true : currentNotification.isRead,
+          actionTaken: isClickedNotification ? true : currentNotification.actionTaken,
+          booking: mergeOwnerBookingUpdate(currentNotification.booking, updatedBooking),
+        };
+      }),
+    );
+
+    if (!notification.isRead) {
+      setUnreadCount((currentCount) => Math.max(0, currentCount - 1));
     }
+  };
 
-    const actionKey = `${notification.id}:${action}`;
-
-    try {
-      setActionLoadingKey(actionKey);
-      setError("");
-
-      const updatedBooking = action === "accept"
-        ? await acceptBooking(notification.booking.id)
-        : await rejectBooking(notification.booking.id);
-      const updatedStatus = updatedBooking?.bookingStatus
-        || (action === "accept" ? "owner_accepted" : "owner_rejected");
-
-      setNotifications((currentNotifications) =>
-        currentNotifications.map((currentNotification) =>
-          currentNotification.id === notification.id
-            ? {
-                ...currentNotification,
-                isRead: true,
-                actionTaken: true,
-                booking: currentNotification.booking
-                  ? { ...currentNotification.booking, status: updatedStatus }
-                  : currentNotification.booking,
-              }
-            : currentNotification,
-        ),
-      );
-
-      if (!notification.isRead) {
-        setUnreadCount((currentCount) => Math.max(0, currentCount - 1));
-      }
-    } catch (actionError) {
-      setError(actionError.message || "Unable to update booking");
-    } finally {
-      setActionLoadingKey("");
-    }
+  const handleBookingActionError = (actionError) => {
+    setError(actionError.message || "Unable to update booking");
   };
 
   if (status !== "authenticated") {
@@ -297,11 +325,11 @@ export default function NotificationBell() {
                 {notifications.map((notification) => {
                   const booking = notification.booking;
                   const bookingStatus = booking?.status;
-                  const canTakeBookingAction = bookingStatus === "paid" && !notification.actionTaken;
-                  const isAccepting = actionLoadingKey === `${notification.id}:accept`;
-                  const isRejecting = actionLoadingKey === `${notification.id}:reject`;
                   const showAcceptedBadge = ["owner_accepted", "in_transit", "delivered"].includes(bookingStatus);
                   const showRejectedBadge = bookingStatus === "owner_rejected";
+                  const currentActionLoading = actionLoadingKey.startsWith(`${notification.id}:`)
+                    ? actionLoadingKey.split(":")[1]
+                    : "";
 
                   return (
                     <div
@@ -373,25 +401,16 @@ export default function NotificationBell() {
                                 </div>
                               </div>
 
-                              {canTakeBookingAction ? (
-                                <div className="grid grid-cols-2 gap-2 border-t border-accent/10 p-3">
-                                  <button
-                                    type="button"
-                                    disabled={Boolean(actionLoadingKey)}
-                                    onClick={(event) => handleBookingAction(event, notification, "accept")}
-                                    className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-                                  >
-                                    {isAccepting ? "Confirming..." : "✓ Confirm Booking"}
-                                  </button>
-                                  <button
-                                    type="button"
-                                    disabled={Boolean(actionLoadingKey)}
-                                    onClick={(event) => handleBookingAction(event, notification, "reject")}
-                                    className="rounded-lg bg-rose-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
-                                  >
-                                    {isRejecting ? "Rejecting..." : "✕ Reject Booking"}
-                                  </button>
-                                </div>
+                              {canManageBooking(currentUserId, booking) ? (
+                                <OwnerBookingActions
+                                  booking={booking}
+                                  size="sm"
+                                  disabled={Boolean(actionLoadingKey)}
+                                  loadingAction={currentActionLoading}
+                                  onLoadingActionChange={(action) => handleBookingActionLoadingChange(notification.id, action)}
+                                  onActionComplete={(updatedBooking) => handleBookingActionComplete(notification, updatedBooking)}
+                                  onActionError={handleBookingActionError}
+                                />
                               ) : null}
                             </div>
                           ) : null}
