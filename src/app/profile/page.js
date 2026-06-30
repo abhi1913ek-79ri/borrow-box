@@ -129,9 +129,9 @@ export default function ProfilePage() {
 
     if (isLoadingProfile) {
         return (
-            <div className="min-h-screen bg-bg text-text">
+            <div className="min-h-screen max-w-full overflow-x-hidden bg-bg text-text">
                 <Navbar isLoggedIn mobileSidebarActive="Profile" />
-                <main className="mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 sm:px-6 md:h-[calc(100vh-92px)] md:grid-cols-[auto_1fr] md:overflow-hidden lg:px-8">
+                <main className="mx-auto grid w-full max-w-7xl gap-6 overflow-x-hidden px-4 py-6 sm:px-6 md:h-[calc(100vh-92px)] md:grid-cols-[auto_1fr] md:overflow-hidden lg:px-8">
                     <Sidebar active="Profile" />
                     <ProfileSkeleton />
                 </main>
@@ -141,13 +141,13 @@ export default function ProfilePage() {
 
     if (!profile) {
         return (
-            <div className="min-h-screen bg-bg text-text">
+            <div className="min-h-screen max-w-full overflow-x-hidden bg-bg text-text">
                 <Navbar isLoggedIn mobileSidebarActive="Profile" />
-                <main className="mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 sm:px-6 md:h-[calc(100vh-92px)] md:grid-cols-[auto_1fr] md:overflow-hidden lg:px-8">
+                <main className="mx-auto grid w-full max-w-7xl gap-6 overflow-x-hidden px-4 py-6 sm:px-6 md:h-[calc(100vh-92px)] md:grid-cols-[auto_1fr] md:overflow-hidden lg:px-8">
                     <Sidebar active="Profile" />
-                    <section className="theme-card rounded-2xl border border-dashed border-red-300 bg-card p-12 text-center">
+                    <section className="theme-card max-w-full rounded-2xl border border-dashed border-red-300 bg-card p-6 text-center sm:p-12">
                         <h2 className="text-lg font-semibold text-red-600">Could not load profile</h2>
-                        <p className="mt-2 text-sm text-text/70">{profileError || "Try again in a moment."}</p>
+                        <p className="mt-2 break-words text-sm text-text/70">{profileError || "Try again in a moment."}</p>
                         <Button className="mt-4" onClick={loadProfile}>Retry</Button>
                     </section>
                 </main>
@@ -156,19 +156,19 @@ export default function ProfilePage() {
     }
 
     return (
-        <div className="min-h-screen bg-bg text-text">
+        <div className="min-h-screen max-w-full overflow-x-hidden bg-bg text-text">
             <Navbar isLoggedIn mobileSidebarActive="Profile" />
 
-            <main className="mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 sm:px-6 md:h-[calc(100vh-92px)] md:grid-cols-[auto_1fr] md:overflow-hidden lg:px-8">
+            <main className="mx-auto grid w-full max-w-7xl gap-6 overflow-x-hidden px-4 py-6 sm:px-6 md:h-[calc(100vh-92px)] md:grid-cols-[auto_1fr] md:overflow-hidden lg:px-8">
                 <Sidebar active="Profile" />
 
-                <div className="vyntra-scroll min-h-0 space-y-6 md:h-full md:overflow-y-auto md:pr-2">
-                    <section className="theme-card overflow-hidden rounded-2xl border border-accent/20 bg-card shadow-sm">
+                <div className="vyntra-scroll min-w-0 max-w-full space-y-6 md:h-full md:overflow-y-auto md:pr-2">
+                    <section className="theme-card max-w-full overflow-hidden rounded-2xl border border-accent/20 bg-card shadow-sm">
                         <div className="h-28 bg-linear-to-r from-primary via-primary/90 to-accent" />
-                        <div className="px-6 pb-6">
-                            <div className="-mt-14 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                                <div className="flex items-end gap-4">
-                                    <div className="grid h-28 w-28 place-items-center overflow-hidden border-4 border-bg bg-linear-to-br from-primary via-primary/90 to-accent text-3xl font-bold rounded-full text-bg shadow-md shadow-primary/30">
+                        <div className="px-4 pb-6 sm:px-6">
+                            <div className="-mt-12 flex flex-col gap-4 sm:-mt-14 sm:flex-row sm:items-end sm:justify-between">
+                                <div className="flex min-w-0 flex-col items-start gap-3 sm:flex-row sm:items-end sm:gap-4">
+                                    <div className="grid h-24 w-24 shrink-0 place-items-center overflow-hidden border-4 border-bg bg-linear-to-br from-primary via-primary/90 to-accent text-2xl font-bold rounded-full text-bg shadow-md shadow-primary/30 sm:h-28 sm:w-28 sm:text-3xl">
                                         {profile.profileImage ? (
                                             // eslint-disable-next-line @next/next/no-img-element
                                             <img src={profile.profileImage} alt={profile.name} className="h-full w-full object-cover" />
@@ -179,20 +179,20 @@ export default function ProfilePage() {
                                                 .join("")
                                         )}
                                     </div>
-                                    <div className="pb-2">
+                                    <div className="w-full min-w-0 pb-0 sm:pb-2">
                                         {isEditing ? (
                                             <div className="space-y-2">
                                                         <input
                                                             name="name"
                                                             value={formState.name}
                                                             onChange={handleFieldChange}
-                                                            className="h-10 w-full rounded-xl border border-accent/20 bg-bg/80 px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
+                                                            className="h-10 w-full min-w-0 max-w-full rounded-xl border border-accent/20 bg-bg/80 px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
                                                         />
                                                     </div>
                                         ) : (
                                             <>
-                                                <h1 className="text-2xl font-semibold text-text">{profile.name}</h1>
-                                                <p className="text-sm text-text/70">{profile.email}</p>
+                                                <h1 className="break-words text-2xl font-semibold text-text">{profile.name}</h1>
+                                                <p className="break-all text-sm text-text/70">{profile.email}</p>
                                             </>
                                         )}
                                     </div>
@@ -210,15 +210,15 @@ export default function ProfilePage() {
                         </div>
                     </section>
 
-                    <section className="grid gap-4 sm:grid-cols-2">
-                        <article className="theme-card rounded-2xl border border-accent/20 bg-card p-5 shadow-sm">
+                    <section className="grid min-w-0 gap-4 sm:grid-cols-2">
+                        <article className="theme-card min-w-0 max-w-full rounded-2xl border border-accent/20 bg-card p-4 shadow-sm sm:p-5">
                             <h2 className="text-lg font-semibold text-text">Personal Details</h2>
                             <div className="mt-4 space-y-3 text-sm">
-                                <div className="rounded-xl bg-bg/80 p-3">
+                                <div className="min-w-0 rounded-xl bg-bg/80 p-3">
                                     <p className="text-text/70">Email ID</p>
-                                    <p className="font-medium text-text">{profile.email}</p>
+                                    <p className="break-all font-medium text-text">{profile.email}</p>
                                 </div>
-                                <div className="rounded-xl bg-bg/80 p-3">
+                                <div className="min-w-0 rounded-xl bg-bg/80 p-3">
                                     <p className="text-text/70">Phone</p>
                                     {isEditing ? (
                                         <input
@@ -229,13 +229,13 @@ export default function ProfilePage() {
                                             value={formState.phone}
                                             onChange={handleFieldChange}
                                             placeholder="9876543210"
-                                            className="h-10 w-full rounded-xl border border-accent/20 bg-bg/80 px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
+                                            className="h-10 w-full min-w-0 max-w-full rounded-xl border border-accent/20 bg-bg/80 px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
                                         />
                                     ) : (
-                                        <p className="font-medium text-text">{profile.phone}</p>
+                                        <p className="break-words font-medium text-text">{profile.phone}</p>
                                     )}
                                 </div>
-                                <div className="rounded-xl bg-bg/80 p-3">
+                                <div className="min-w-0 rounded-xl bg-bg/80 p-3">
                                     <p className="text-text/70">UPI ID</p>
                                     {isEditing ? (
                                         <input
@@ -243,87 +243,87 @@ export default function ProfilePage() {
                                             value={formState.upiId}
                                             onChange={handleFieldChange}
                                             placeholder="name@bank"
-                                            className="h-10 w-full rounded-xl border border-accent/20 bg-bg/80 px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
+                                            className="h-10 w-full min-w-0 max-w-full rounded-xl border border-accent/20 bg-bg/80 px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
                                         />
                                     ) : (
-                                        <p className="font-medium text-text">{profile.upiId || "Not set"}</p>
+                                        <p className="break-all font-medium text-text">{profile.upiId || "Not set"}</p>
                                     )}
                                 </div>
                             </div>
                         </article>
 
-                        <article className="theme-card rounded-2xl border border-accent/20 bg-card p-5 shadow-sm">
+                        <article className="theme-card min-w-0 max-w-full rounded-2xl border border-accent/20 bg-card p-4 shadow-sm sm:p-5">
                             <h2 className="text-lg font-semibold text-text">Address</h2>
-                            <div className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
-                                <div className="rounded-xl bg-bg/80 p-3">
+                            <div className="mt-4 grid min-w-0 gap-3 text-sm sm:grid-cols-3">
+                                <div className="min-w-0 rounded-xl bg-bg/80 p-3">
                                     <p className="text-text/70">City</p>
                                     {isEditing ? (
                                         <input
                                             name="city"
                                             value={formState.city}
                                             onChange={handleFieldChange}
-                                            className="h-10 w-full rounded-xl border border-accent/20 bg-bg/80 px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
+                                            className="h-10 w-full min-w-0 max-w-full rounded-xl border border-accent/20 bg-bg/80 px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
                                         />
                                     ) : (
-                                        <p className="font-medium text-text">{profile.address.city}</p>
+                                        <p className="break-words font-medium text-text">{profile.address.city}</p>
                                     )}
                                 </div>
-                                <div className="rounded-xl bg-bg/80 p-3">
+                                <div className="min-w-0 rounded-xl bg-bg/80 p-3">
                                     <p className="text-text/70">State</p>
                                     {isEditing ? (
                                         <input
                                             name="state"
                                             value={formState.state}
                                             onChange={handleFieldChange}
-                                            className="h-10 w-full rounded-xl border border-accent/20 bg-bg/80 px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
+                                            className="h-10 w-full min-w-0 max-w-full rounded-xl border border-accent/20 bg-bg/80 px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
                                         />
                                     ) : (
-                                        <p className="font-medium text-text">{profile.address.state}</p>
+                                        <p className="break-words font-medium text-text">{profile.address.state}</p>
                                     )}
                                 </div>
-                                <div className="rounded-xl bg-bg/80 p-3">
+                                <div className="min-w-0 rounded-xl bg-bg/80 p-3">
                                     <p className="text-text/70">Pincode</p>
                                     {isEditing ? (
                                         <input
                                             name="pincode"
                                             value={formState.pincode}
                                             onChange={handleFieldChange}
-                                            className="h-10 w-full rounded-xl border border-accent/20 bg-bg/80 px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
+                                            className="h-10 w-full min-w-0 max-w-full rounded-xl border border-accent/20 bg-bg/80 px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
                                         />
                                     ) : (
-                                        <p className="font-medium text-text">{profile.address.pincode}</p>
+                                        <p className="break-words font-medium text-text">{profile.address.pincode}</p>
                                     )}
                                 </div>
                             </div>
                         </article>
                     </section>
 
-                    <section className="theme-card rounded-2xl border border-accent/20 bg-card p-5 shadow-sm">
-                        <div className="flex items-center justify-between gap-3">
+                    <section className="theme-card min-w-0 max-w-full rounded-2xl border border-accent/20 bg-card p-4 shadow-sm sm:p-5">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <h2 className="text-lg font-semibold text-text">Profile Controls</h2>
                             {!isEditing ? (
-                                <Button onClick={handleStartEdit}>Edit Profile</Button>
+                                <Button className="w-full sm:w-auto" onClick={handleStartEdit}>Edit Profile</Button>
                             ) : null}
                         </div>
 
                         {saveError && (
-                            <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-600">{saveError}</p>
+                            <p className="mt-3 break-words rounded-xl bg-red-50 px-3 py-2 text-sm text-red-600">{saveError}</p>
                         )}
-                        <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
-                            <div className="rounded-xl bg-bg/80 p-3">
+                        <div className="mt-4 grid min-w-0 gap-3 text-sm sm:grid-cols-2">
+                            <div className="min-w-0 rounded-xl bg-bg/80 p-3">
                                 <p className="text-text/70">createdAt</p>
-                                <p className="font-medium text-text">{formatDateTime(profile.createdAt)}</p>
+                                <p className="break-words font-medium text-text">{formatDateTime(profile.createdAt)}</p>
                             </div>
-                            <div className="rounded-xl bg-bg/80 p-3">
+                            <div className="min-w-0 rounded-xl bg-bg/80 p-3">
                                 <p className="text-text/70">updatedAt</p>
-                                <p className="font-medium text-text">{formatDateTime(profile.updatedAt)}</p>
+                                <p className="break-words font-medium text-text">{formatDateTime(profile.updatedAt)}</p>
                             </div>
                         </div>
 
                         {isEditing && (
-                            <div className="mt-5 flex justify-end gap-3">
-                                <Button variant="secondary" onClick={handleCancel} disabled={isSaving}>Cancel</Button>
-                                <Button onClick={handleSave} disabled={isSaving}>
+                            <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-end">
+                                <Button className="w-full sm:w-auto" variant="secondary" onClick={handleCancel} disabled={isSaving}>Cancel</Button>
+                                <Button className="w-full sm:w-auto" onClick={handleSave} disabled={isSaving}>
                                     {isSaving ? "Saving..." : "Save Profile"}
                                 </Button>
                             </div>
